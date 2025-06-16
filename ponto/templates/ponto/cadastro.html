@@ -1,0 +1,52 @@
+{% extends "ponto/base.html" %}
+
+{% block content %}
+<h2>{% if edicao %}Editar Profissional{% elif modo_gestor %}Cadastrar Profissional{% else %}Meus Dados{% endif %}</h2>
+
+<form method="post">
+  {% csrf_token %}
+  <label>Nome Completo:</label>
+  <input type="text" name="nomeCompleto" value="{{ profissional.usuario.nome_completo }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Email:</label>
+  <input type="email" name="email" value="{{ profissional.usuario.email }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  {% if modo_gestor %}
+    <label>CPF:</label>
+    <input type="text" name="cpf" required><br>
+
+    <label>Senha:</label>
+    <input type="password" name="senha" required><br>
+  {% endif %}
+
+  <label>Telefone:</label>
+  <input type="text" name="telefone" value="{{ profissional.telefone }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Data de Nascimento:</label>
+  <input type="date" name="dataNascimento" value="{{ profissional.data_nascimento }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Remuneração:</label>
+  <input type="text" name="remuneracao" value="{{ profissional.remuneracao }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Data de Admissão:</label>
+  <input type="date" name="dataAdmissao" value="{{ profissional.data_admissao }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Horário de Entrada:</label>
+  <input type="time" name="horarioEntrada" value="{{ profissional.horario_entrada }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Início do Intervalo:</label>
+  <input type="time" name="intervaloInicio" value="{{ profissional.intervalo_inicio }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Fim do Intervalo:</label>
+  <input type="time" name="intervaloFim" value="{{ profissional.intervalo_fim }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  <label>Horário de Saída:</label>
+  <input type="time" name="horarioSaida" value="{{ profissional.horario_saida }}" {% if not modo_gestor %}readonly{% endif %}><br>
+
+  {% if modo_gestor %}
+    <button type="submit">Salvar</button>
+  {% endif %}
+</form>
+
+<a href="{% url 'inicio' %}">Voltar</a>
+{% endblock %}

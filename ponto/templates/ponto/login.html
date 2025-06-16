@@ -13,12 +13,12 @@
             <form method="post">
                 {% csrf_token %}
                 <div class="form-group">
-                    <label form="username">CPF:</label>
-                    <input type="text" name="username" id="username" required placeholder="Digite seu CPF">
+                    <label for="username">CPF:</label>
+                    <input type="text" id="username" name="username" required placeholder="Digite seu CPF">
                 </div>
                 <div class="form-group">
-                    <label form="password">Senha:</label>
-                    <input type="password" name="password" id="password" required placeholder="Digite sua senha">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" name="password" required placeholder="Digite sua senha">
                 </div>
                 <button type="submit">Entrar</button>
             </form>

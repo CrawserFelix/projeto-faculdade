@@ -1,0 +1,29 @@
+{% extends "ponto/base.html" %}
+
+{% block content %}
+<h2>Página Inicial</h2>
+
+{% if user.is_staff %}
+  <div id="dashboard">
+    <p>Bem-vindo, {{ user.nome_completo }}.</p>
+    <p>Dashboard do gestor em construção...</p>
+  </div>
+{% else %}
+  <form method="post" action="{% url 'registrar_ponto' %}">
+    {% csrf_token %}
+    <button name="tipo" value="entrada">Registrar Entrada</button>
+    <button name="tipo" value="pausa">Registrar Pausa</button>
+    <button name="tipo" value="retorno">Registrar Retorno</button>
+    <button name="tipo" value="saida">Registrar Saída</button>
+  </form>
+{% endif %}
+
+{% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% endblock %}

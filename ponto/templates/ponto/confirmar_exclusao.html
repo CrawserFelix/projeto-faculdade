@@ -1,0 +1,14 @@
+{% extends "ponto/base.html" %}
+
+{% block content %}
+<h2>Confirmação de Exclusão</h2>
+
+<p>Tem certeza que deseja excluir o profissional <strong>{{ profissional.usuario.get_full_name }}</strong> (CPF: {{ profissional.cpf }})?</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sim, excluir</button>
+  <a href="{% url 'lista_profissionais' %}">Cancelar</a>
+</form>
+
+{% endblock %}

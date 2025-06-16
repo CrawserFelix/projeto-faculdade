@@ -1,0 +1,49 @@
+{% extends 'ponto/base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Profissionais</h2>
+
+<form method="get" class="filtros">
+  <label for="nome">Nome:</label>
+  <input type="text" name="nome" id="nome" value="{{ request.GET.nome }}">
+
+  <label for="cpf">CPF:</label>
+  <input type="text" name="cpf" id="cpf" value="{{ request.GET.cpf }}">
+
+  <button type="submit">Filtrar</button>
+</form>
+
+<table class="tabela-cadastro-profissional">
+  <thead>
+    <tr>
+      <th>Nome</th>
+      <th>CPF</th>
+      <th>Email</th>
+      <th>Ações</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for profissional in profissionais %}
+    <tr>
+      <td>{{ profissional.usuario.get_full_name }}</td>
+      <td>{{ profissional.usuario.cpf }}</td>
+      <td>{{ profissional.usuario.email }}</td>
+      <td>
+        <a href="{% url 'editar_profissional' profissional.id %}" class="botao-acao editar">Editar</a>
+        <a href="{% url 'visualizar_folha' profissional.id %}" class="botao-acao">Folha</a>
+      </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4">Nenhum profissional encontrado.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="form-actions">
+  <a href="{% url 'cadastrar' %}"><button type="button">Novo Profissional</button></a>
+  <a href="{% url 'inicio' %}"><button type="button">Voltar</button></a>
+</div>
+
+<script src="{% static 'js/popups.js' %}"></script>
+{% endblock %}

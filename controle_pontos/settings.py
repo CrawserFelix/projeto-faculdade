@@ -41,8 +41,8 @@ INSTALLED_APPS = [
 ]
 
 INSTALLED_APPS += [
-    'usuarios',
-    'profissionais'
+    'ponto',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -60,7 +60,7 @@ ROOT_URLCONF = 'controle_pontos.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ["templates"],
+        'DIRS': [BASE_DIR / 'templates.ponto'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -86,7 +86,7 @@ DATABASES = {
     }
 }
 
-AUTH_USER_MODEL = "usuarios.Usuario"
+AUTH_USER_MODEL = "ponto.Usuario"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -134,11 +134,24 @@ STATICFILES_DIRS = [
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/registrar_ponto'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'inicio'
+LOGOUT_REDIRECT_URL = 'login'
 
 AUTHENTICATION_BACKENDS = [
-    'usuarios.backends.AutenticadorCPFBackend',  # CPF personalizado
     'django.contrib.auth.backends.ModelBackend', # padrão (admin etc.)
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
+# settings.py
+TIME_INPUT_FORMATS = ['%H:%M']
+TIME_FORMAT = 'H:i'
