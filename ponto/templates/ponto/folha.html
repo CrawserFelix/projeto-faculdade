@@ -1,0 +1,63 @@
+{% extends 'ponto/base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Folha de Ponto - {{ profissional.usuario.nome_completo }}</h2>
+
+<div class="navegacao-meses">
+  <a href="?mes={{ mes_anterior.mes }}&ano={{ mes_anterior.ano }}">&larr; Mês anterior</a>
+  <strong>{{ mes }}/{{ ano }}</strong>
+  <a href="?mes={{ mes_proximo.mes }}&ano={{ mes_proximo.ano }}">Próximo mês &rarr;</a>
+</div>
+
+<form method="post" action="{% url 'salvar_alteracoes_folha' profissional.id %}?mes={{ mes }}&ano={{ ano }}">
+  {% csrf_token %}
+  <table class="tabela-folha-ponto">
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Entrada</th>
+        <th>Pausa</th>
+        <th>Retorno</th>
+        <th>Saída</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% regroup registros by data as dias %}
+      {% for dia in dias %}
+      <tr>
+        <td>{{ dia.grouper|date:"d/m/Y" }}</td>
+        {% for tipo in tipos_padrao %}
+        <td>
+          {% with slots=dia.list|dictsort:"tipo" %}{% endwith %}
+          {% comment %} Exibe o registro correspondente, se existir {% endcomment %}
+          {% for reg in dia.list %}
+            {% if reg.tipo == tipo %}
+              {% if pode_editar %}
+                <input type="time" name="registro_{{ reg.id }}" value="{{ reg.hora|time:'H:i' }}">
+                <input type="checkbox" name="editar_{{ reg.id }}">
+              {% else %}
+                {{ reg.hora|time:'H:i' }}
+              {% endif %}
+            {% endif %}
+          {% empty %}
+            -
+          {% endfor %}
+        </td>
+        {% endfor %}
+      </tr>
+      {% empty %}
+      <tr><td colspan="5">Sem registros encontrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if pode_editar %}
+  <div class="form-actions">
+    <button type="submit">Salvar alterações</button>
+  </div>
+  {% endif %}
+</form>
+
+<a href="{% url 'listar_profissionais' %}">Voltar</a>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "ponto/base.html" %}
+
+{% block content %}
+<h2>Minha Folha de Ponto ({{ mes }}/{{ ano }})</h2>
+
+<div class="navegacao-meses">
+  <a href="?mes={{ mes_anterior.mes }}&ano={{ mes_anterior.ano }}">&laquo; Mês Anterior</a> |
+  <a href="?mes={{ mes_proximo.mes }}&ano={{ mes_proximo.ano }}">Próximo Mês &raquo;</a>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Data</th>
+      <th>Tipo</th>
+      <th>Horário</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ponto in registros %}
+    <tr>
+      <td>{{ ponto.data }}</td>
+      <td>{{ ponto.get_tipo_display }}</td>
+      <td>{{ ponto.hora|time:'H:i' }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="3">Nenhum registro de ponto encontrado neste mês.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'inicio' %}">Voltar</a>
+{% endblock %}
