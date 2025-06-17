@@ -31,7 +31,7 @@
       <td>{{ profissional.usuario.email }}</td>
       <td>
         <a href="{% url 'editar_profissional' profissional.id %}" class="botao-acao editar">Editar</a>
-        <a href="{% url 'visualizar_folha' profissional.id %}" class="botao-acao">Folha</a>
+        <a href="{% url 'excluir_profissional' profissional.id %}" class="botao-acao">Excluir</a>
       </td>
     </tr>
     {% empty %}

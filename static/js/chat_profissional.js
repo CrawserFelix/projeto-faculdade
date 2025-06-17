@@ -1,16 +1,3 @@
-{% extends "ponto/base.html" %}
-{% load static %}
-
-{% block content %}
-<div id="chat-container" class="chat-container lista-itens" data-gestor-id="{{ gestor_id }}" data-user-id="{{ user.id }}">
-  <h2>Chat com Gestor</h2>
-  <div id="chat-box" style="height:400px; overflow-y:auto;"></div>
-  <form id="chat-form">
-    <input type="text" id="msg-input" placeholder="Escreva sua mensagem..." autocomplete="off" required>
-    <button type="submit">Enviar</button>
-  </form>
-
-  <script>
   document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('chat-container');
     const gestorId = container.dataset.gestorId;
@@ -19,13 +6,15 @@
     const form = document.getElementById('chat-form');
     const input = document.getElementById('msg-input');
 
+    if (!gestorId) return;
+
     function renderMessages(msgs) {
       chatBox.innerHTML = '';
       msgs.forEach(m => {
         const div = document.createElement('div');
         div.className = (m.remetente == userId) ? 'mensagem-enviada' : 'mensagem-recebida';
         const time = new Date(m.criado_em).toLocaleTimeString();
-        div.textContent = `[\${time}] \${m.conteudo}`;
+        div.textContent = `[${time}] ${m.conteudo}`;
         chatBox.appendChild(div);
       });
       chatBox.scrollTop = chatBox.scrollHeight;
@@ -63,6 +52,3 @@
     fetchChat();
     setInterval(fetchChat, 3000);
   });
-  </script>
-</div>
-{% endblock %}

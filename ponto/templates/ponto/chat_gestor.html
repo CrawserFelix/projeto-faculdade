@@ -1,0 +1,43 @@
+{% extends "ponto/base.html" %}
+{% load static %}
+{% block content %}
+<div class="chat-wrapper">
+  <aside class="chat-lista">
+    <h3>Profissionais</h3>
+    <ul>
+      {% for prof, count in unread_items %}
+      <li class="{% if prof.id == ativo.id %}ativo{% endif %}">
+        <a href="{% url 'chat_gestor_conversa' prof.id %}">
+          {{ prof.usuario.nome_completo }}
+          {% if count %}<span class="badge">{{ count }}</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </aside>
+
+  <section class="chat-conversa">
+    {% if ativo %}
+    <h3>Conversa com {{ ativo.usuario.nome_completo }}</h3>
+    <div id="chat-box">
+      {% for msg in conversa %}
+      <div class="mensagem {% if msg.remetente == request.user %}minha{% else %}deles{% endif %}">
+        <small>{{ msg.criado_em|date:"H:i" }}</small>
+        <p>{{ msg.conteudo }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    <form id="chat-form" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="destinatario" id="destinatario" value="{{ ativo.usuario.id }}">
+      <input type="text" name="conteudo" id="conteudo" placeholder="Escreva..." required>
+      <button type="submit">Enviar</button>
+    </form>
+    {% else %}
+    <p>Selecione um profissional para começar a conversar.</p>
+    {% endif %}
+  </section>
+</div>
+
+<script src="{% static 'js/chat_profissinal.js' %}"></script>
+{% endblock %}

@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse
 from .models import Profissional, Usuario, RegistroPonto, Mensagem
+from django.db.models import Count, Q
 
 
 def index(request):
@@ -126,6 +127,21 @@ def editar_profissional(request, profissional_id):
         "edicao": True
     })
 
+@user_passes_test(lambda u: u.is_staff)
+def excluir_profissional(request, profissional_id):
+    profissional = get_object_or_404(Profissional, id=profissional_id)
+
+    if request.method == "POST":
+        usuario = profissional.usuario
+        profissional.delete()
+        usuario.delete()
+        
+        messages.success(request, "Profissional excluído com sucesso!")
+        return redirect("listar_profissionais")
+    
+    return render(request, "ponto/confirmar_exclusao.html", {"profissional": profissional})
+
+
 
 @login_required
 def registrar_ponto(request):
@@ -242,14 +258,69 @@ def visualizar_folha(request, profissional_id):
     })
                   
 @login_required
-def chat(request):
-    # Apenas profissionais acessam esta página de chat
-    if request.user.is_staff:
-        return redirect('listar_profissionais')
+@login_required
+def chat_profissional(request):
+    # profissional logado
+    Profissional = get_object_or_404(Profissional, usuario=request.user)
 
-    # Seleciona o primeiro gestor (usuário staff) para conversar
-    gestor = Usuario.objects.filter(is_staff=True).first()
+    # encontra usuário gestor (is_staff)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    gestor_user = User.objects.filter(is_staff=True).first()
 
-    return render(request, 'ponto/chat.html', {
-        'gestor_id': gestor.id
+    # mapeia para Profissional, se existir
+    gestor = None
+    if gestor_user:
+        gestor = Profissional.objects.filter(usuario=gestor_user).first()
+
+    if not gestor:
+        # nenhum gestor cadastrado: avisa e renderiza sem chat
+        messages.warning(request, "Ainda não há nenhum gestor cadastrado para conversar.")
+        return render(request, 'ponto/chat_profissional.html', {
+            'profissional': Profissional,
+            'gestorId': None,
+            'userId': request.user.id,
+        })
+
+    # tudo OK: renderiza chat
+    return render(request, 'ponto/chat_profissional.html', {
+        'profissional': Profissional,
+        'gestorId': gestor.usuario.id,
+        'userId': request.user.id,
+    })
+    
+@login_required
+@user_passes_test(lambda u: u.is_staff)
+def chat_gestor(request, profissional_id=None):
+    """
+    Se profissional_id for None, exibe lista lateral.
+    Se passado, carrega conversa com aquele profissional.
+    """
+    # lista de todos os profissionais com unread > 0
+    profs = Profissional.objects.select_related('usuario').all()
+    # calcular notificações não lidas
+    unread_counts = {
+        p.id: Mensagem.objects.filter(remetente=p.usuario, destinatario__id=request.user.id, lido=False).count()
+        for p in profs
+    }
+
+    conversa = []
+    ativo = None
+    if profissional_id:
+        ativo = get_object_or_404(Profissional, id=profissional_id)
+        conversa = Mensagem.objects.filter(
+            (Q(remetente=ativo.usuario, destinatario=request.user) |
+             Q(remetente=request.user, destinatario=ativo.usuario))
+        ).order_by('criado_em')
+        # marca todas como lidas
+        Mensagem.objects.filter(remetente=ativo.usuario, destinatario=request.user, lido=False).update(lido=True)
+    
+    unread_items = [(p, unread_counts[p.id]) for p in profs]
+
+    return render(request, 'ponto/chat_gestor.html', {
+        'profissionais': profs,
+        'unread_items': unread_items,
+        'unread_counts': unread_counts,
+        'conversa': conversa,
+        'ativo': ativo,
     })

@@ -3,12 +3,14 @@
 {% block content %}
 <h2>Confirmação de Exclusão</h2>
 
-<p>Tem certeza que deseja excluir o profissional <strong>{{ profissional.usuario.get_full_name }}</strong> (CPF: {{ profissional.cpf }})?</p>
+<p>Tem certeza que deseja excluir o seguinte profissional?</p>
+<p>Nome: <strong>{{ profissional.usuario.get_full_name }}</strong></p> 
+<p>CPF: <strong>{{ profissional.usuario.cpf }}</strong></p>
 
 <form method="post">
   {% csrf_token %}
   <button type="submit">Sim, excluir</button>
-  <a href="{% url 'lista_profissionais' %}">Cancelar</a>
+  <a href="{% url 'listar_profissionais' %}">Cancelar</a>
 </form>
 
 {% endblock %}
