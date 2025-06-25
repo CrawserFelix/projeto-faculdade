@@ -8,6 +8,7 @@
   <h2>Chat com Gestor</h2>
   <div id="chat-box" style="height:400px; overflow-y:auto;"></div>
   <form id="chat-form">
+    {% csrf_token %}
     <input type="text" id="msg-input"
            placeholder="Escreva sua mensagem…"
            autocomplete="off" required>

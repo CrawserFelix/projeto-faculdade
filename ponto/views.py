@@ -1,7 +1,8 @@
-from django.http import JsonResponse
+from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from datetime import datetime
 from calendar import month_name, monthrange
+from django.views.decorators.http import require_GET
 from collections import defaultdict
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, get_user_model
@@ -15,7 +16,10 @@ User = get_user_model()
 
 
 def index(request):
-    return render(request, "ponto/inicio.html")
+    if request.user.is_staff:
+        return dashboard(request)
+    else:
+        return render(request, "ponto/inicio.html")
 
 
 def login_usuario(request):
@@ -323,21 +327,19 @@ def chat_gestor(request, profissional_id=None):
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def dashboard(request):
-    # 1) Meses
-    meses = [
-        {'value': i, 'display': month_name[i]}
-        for i in range(1, 13)
-    ]
+    # 1) Meses (1–12) com nomes em português
+    meses = [{'value': i, 'display': month_name[i]} for i in range(1, 13)]
+
     # 2) Mês e ano correntes ou vindos da querystring
     hoje = datetime.today()
-    mes_get = request.GET.get('mes')
-    ano_get = request.GET.get('ano')
+    mes_atual = request.GET.get('mes')
+    ano_atual = request.GET.get('ano')
     try:
-        mes_atual = int(mes_get) if mes_get and mes_get.isdigit() else hoje.month
+        mes_atual = int(mes_atual) if mes_atual and mes_atual.isdigit() else hoje.month
     except ValueError:
         mes_atual = hoje.month
     try:
-        ano_atual = int(ano_get) if ano_get and ano_get.isdigit() else hoje.year
+        ano_atual = int(ano_atual) if ano_atual and ano_atual.isdigit() else hoje.year
     except ValueError:
         ano_atual = hoje.year
 
@@ -345,13 +347,12 @@ def dashboard(request):
     anos_reg = {r.data.year for r in RegistroPonto.objects.all()}
     anos = sorted(anos_reg) if anos_reg else [hoje.year]
 
-    # 4) Profissionais da sua equipe
-    # supondo que gestor → Profissional.usuario = request.user
-    gestor_prof = Profissional.objects.filter(usuario=request.user).first()
-    if gestor_prof:
-        profissionais = Profissional.objects.filter(gestor=request.user).select_related('usuario')
-    else:
-        profissionais = Profissional.objects.none()
+    # 4) Profissionais subordinados ao gestor logado
+    profissionais = (
+        Profissional.objects
+        .filter(gestor=request.user)
+        .select_related('usuario')
+    )
 
     return render(request, "ponto/inicio.html", {
         "meses": meses,
@@ -362,59 +363,81 @@ def dashboard(request):
     })
 
 @login_required
+@require_GET
 def dashboard_data(request):
-    # 1) pega o profissional
+    user = request.user
+    mes = request.GET.get('mes')
+    ano = request.GET.get('ano')
     prof_id = request.GET.get('profissional')
-    if prof_id and prof_id.isdigit():
-        profissional = get_object_or_404(Profissional, id=int(prof_id))
+
+    # valida mês e ano
+    try:
+        mes = int(mes) if mes and mes.isdigit() else datetime.today().month
+        ano = int(ano) if ano and ano.isdigit() else datetime.today().year
+    except ValueError:
+        return HttpResponseBadRequest("Parâmetros de mês ou ano inválidos.")
+
+    # determina o profissional alvo
+    if user.is_staff:
+        if not prof_id or not prof_id.isdigit():
+            return HttpResponseBadRequest("Gestor deve especificar um profissional.")
+        try:
+            profissional = Profissional.objects.get(pk=int(prof_id), gestor=user)
+        except Profissional.DoesNotExist:
+            return HttpResponseBadRequest("Profissional não encontrado ou sem permissão.")
     else:
-        # se não veio ou inválido, e for usuário comum, usa o próprio
-        if request.user.is_staff:
-            return JsonResponse({'error': 'Parâmetro profissional faltando ou inválido.'}, status=400)
-        profissional = get_object_or_404(Profissional, usuario=request.user)
+        try:
+            profissional = Profissional.objects.get(usuario=user)
+        except Profissional.DoesNotExist:
+            return HttpResponseBadRequest("Profissional não cadastrado para este usuário.")
 
-    # 2) mês e ano
-    hoje = datetime.today()
-    mes_param = request.GET.get('mes', '')
-    ano_param = request.GET.get('ano', '')
+    # monta o objeto 'esperado' com os horários padrão
+    esperado = {
+        "entrada": profissional.horario_entrada.strftime("%H:%M") if profissional.horario_entrada else None,
+        "inicio_intervalo": profissional.intervalo_inicio.strftime("%H:%M") if profissional.intervalo_inicio else None,
+        "fim_intervalo": profissional.intervalo_fim.strftime("%H:%M") if profissional.intervalo_fim else None,
+        "saida": profissional.horario_saida.strftime("%H:%M") if profissional.horario_saida else None,
+    }
 
-    if mes_param.isdigit():
-        mes = int(mes_param)
-    else:
-        mes = hoje.month
-
-    if ano_param.isdigit():
-        ano = int(ano_param)
-    else:
-        ano = hoje.year
-
-    # 3) busca registros do mês/ano
-    registros = RegistroPonto.objects.filter(
+    # busca os registros do mês/ano
+    registros_raw = RegistroPonto.objects.filter(
         profissional=profissional,
         data__year=ano,
         data__month=mes
-    )
+    ).order_by('data', 'hora')
 
-    # 4) monta dados do dashboard (exemplo de saída; adapte ao que precisar)
-    #   vamos agrupar por dia e calcular atrasos, horas trabalhadas, etc.
-    from collections import defaultdict
-    dados = defaultdict(lambda: {'entrada': None, 'pausa': None, 'retorno': None, 'saida': None})
-
-    for reg in registros:
+    # agrupa por dia
+    realizado = []
+    dias = {}
+    for reg in registros_raw:
         dia = reg.data.day
-        dados[dia][reg.tipo] = reg.hora.strftime('%H:%M')
+        if dia not in dias:
+            dias[dia] = {
+                "dia": dia,
+                "entrada": None,
+                "pausa": None,
+                "retorno": None,
+                "saida": None,
+            }
+        # preenche de acordo com o tipo
+        if reg.tipo == RegistroPonto.tipo:
+            dias[dia]["entrada"] = reg.hora.strftime("%H:%M")
+        elif reg.tipo == RegistroPonto.tipo:
+            dias[dia]["pausa"] = reg.hora.strftime("%H:%M")
+        elif reg.tipo == RegistroPonto.tipo:
+            dias[dia]["retorno"] = reg.hora.strftime("%H:%M")
+        elif reg.tipo == RegistroPonto.tipo:
+            dias[dia]["saida"] = reg.hora.strftime("%H:%M")
 
-    # 5) serializa em lista ordenada
-    resultado = []
-    for dia in sorted(dados):
-        resultado.append({
-            'dia': dia,
-            **dados[dia]
-        })
+    # transforma o dicionário em lista ordenada
+    for dia in sorted(dias):
+        realizado.append(dias[dia])
 
+    # devolve o JSON no formato esperado pelo dashboard.js
     return JsonResponse({
-        'profissional': profissional.usuario.nome_completo,
-        'mes': mes,
-        'ano': ano,
-        'registros': resultado
+        "profissional": profissional.usuario.nome_completo,
+        "mes": mes,
+        "ano": ano,
+        "esperado": esperado,
+        "realizado": realizado,
     })

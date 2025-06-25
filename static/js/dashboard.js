@@ -3,9 +3,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let chart = null;
 
   async function loadData() {
-    const prof = document.getElementById('profissional').value;
-    const mes  = document.getElementById('mes').value;
-    const ano  = document.getElementById('ano').value;
+    const prof = document.getElementById('filtro-profissional').value;
+    const mes  = document.getElementById('filtro-mes').value;
+    const ano  = document.getElementById('filtro-ano').value;
     const res  = await fetch(
       `/dashboard/data/?profissional=${prof}&mes=${mes}&ano=${ano}`
     );
@@ -60,6 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Listeners
-  document.getElementById('filters').addEventListener('change', loadData);
+  document.getElementById('dashboard-atualizar').addEventListener('click', loadData)
   loadData();
 });

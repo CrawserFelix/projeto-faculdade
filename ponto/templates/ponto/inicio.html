@@ -57,6 +57,7 @@
       </thead>
       <tbody></tbody>
     </table>
+    <canvas id="chart"></canvas>
   {% else %}
     <form method="post" action="{% url 'registrar_ponto' %}">
       {% csrf_token %}
@@ -74,6 +75,6 @@
       {% endfor %}
     </ul>
   {% endif %}
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}
