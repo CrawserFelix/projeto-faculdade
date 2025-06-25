@@ -2,14 +2,17 @@
 {% load static %}
 
 {% block content %}
-<div id="chat-container" data-user-id="{{ userId }}" {% if gestorId %}data-gestor-id="{{ gestorId }}"{% endif %}>
+<div id="chat-container"
+     data-user-id="{{ userId }}"
+     data-gestor-id="{{ gestorId }}">
   <h2>Chat com Gestor</h2>
   <div id="chat-box" style="height:400px; overflow-y:auto;"></div>
   <form id="chat-form">
-    <input type="text" id="msg-input" placeholder="Escreva sua mensagem..." autocomplete="off" required>
+    <input type="text" id="msg-input"
+           placeholder="Escreva sua mensagem…"
+           autocomplete="off" required>
     <button type="submit">Enviar</button>
   </form>
 </div>
-<script src="{% static 'js/chat_profissinal.js' %}"></script>
-
+<script src="{% static 'js/chat_profissional.js' %}"></script>
 {% endblock %}

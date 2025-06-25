@@ -1,29 +1,79 @@
 {% extends "ponto/base.html" %}
-
+{% load static %}
 {% block content %}
-<h2>Página Inicial</h2>
+  <h2>Página Inicial</h2>
 
-{% if user.is_staff %}
-  <div id="dashboard">
-    <p>Bem-vindo, {{ user.nome_completo }}.</p>
-    <p>Dashboard do gestor em construção...</p>
-  </div>
-{% else %}
-  <form method="post" action="{% url 'registrar_ponto' %}">
-    {% csrf_token %}
-    <button name="tipo" value="entrada">Registrar Entrada</button>
-    <button name="tipo" value="pausa">Registrar Pausa</button>
-    <button name="tipo" value="retorno">Registrar Retorno</button>
-    <button name="tipo" value="saida">Registrar Saída</button>
-  </form>
-{% endif %}
+  {% if user.is_staff %}
+    <div id="dashboard">
+      <p>Bem-vindo, {{ user.get_full_name }}.</p>
+      <form id="dashboard-filtros">
+        <label for="filtro-profissional">Profissional:</label>
+        <select id="filtro-profissional" name="profissional">
+          <option value="">— Todos —</option>
+          {% for prof in profissionais %}
+            <option value="{{ prof.id }}"
+              {% if prof.id|stringformat:"s" == request.GET.profissional %}selected{% endif %}>
+              {{ prof.usuario.nome_completo }}
+            </option>
+          {% endfor %}
+        </select>
 
-{% if messages %}
-  <ul class="messages">
-    {% for message in messages %}
-      <li class="{{ message.tags }}">{{ message }}</li>
-    {% endfor %}
-  </ul>
-{% endif %}
+        <label for="filtro-mes">Mês:</label>
+        <select id="filtro-mes" name="mes">
+          <option value="">— Todos —</option>
+          {% for m in meses %}
+            <option value="{{ m.value }}"
+              {% if m.value == mes_atual %}selected{% endif %}>
+              {{ m.display }}
+            </option>
+          {% endfor %}
+        </select>
 
+        <label for="filtro-ano">Ano:</label>
+        <select id="filtro-ano" name="ano">
+          <option value="">— Todos —</option>
+          {% for y in anos %}
+            <option value="{{ y }}"
+              {% if y == ano_atual %}selected{% endif %}>
+              {{ y }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <button type="button" id="dashboard-atualizar">Atualizar</button>
+      </form>
+    </div>
+
+    <!-- Tabela de dados (será populada via JS) -->
+    <table id="dashboard-table" class="tabela-folha-ponto">
+      <thead>
+        <tr>
+          <th>Dia</th>
+          <th>Entrada</th>
+          <th>Pausa</th>
+          <th>Retorno</th>
+          <th>Saída</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  {% else %}
+    <form method="post" action="{% url 'registrar_ponto' %}">
+      {% csrf_token %}
+      <button name="tipo" value="entrada">Registrar Entrada</button>
+      <button name="tipo" value="pausa">Registrar Pausa</button>
+      <button name="tipo" value="retorno">Registrar Retorno</button>
+      <button name="tipo" value="saida">Registrar Saída</button>
+    </form>
+  {% endif %}
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

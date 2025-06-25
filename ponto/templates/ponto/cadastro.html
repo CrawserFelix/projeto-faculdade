@@ -1,52 +1,139 @@
 {% extends "ponto/base.html" %}
 
 {% block content %}
-<h2>{% if edicao %}Editar Profissional{% elif modo_gestor %}Cadastrar Profissional{% else %}Meus Dados{% endif %}</h2>
+  <h2>
+    {% if edicao %}
+      Editar Profissional
+    {% elif modo_gestor %}
+      Cadastrar Profissional
+    {% else %}
+      Meus Dados
+    {% endif %}
+  </h2>
 
-<form method="post">
-  {% csrf_token %}
-  <label>Nome Completo:</label>
-  <input type="text" name="nomeCompleto" value="{{ profissional.usuario.nome_completo }}" {% if not modo_gestor %}readonly{% endif %}><br>
+  <form method="post">
+    {% csrf_token %}
 
-  <label>Email:</label>
-  <input type="email" name="email" value="{{ profissional.usuario.email }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Nome Completo:</label>
+    <input
+      type="text"
+      name="nomeCompleto"
+      value="{% if profissional %}{{ profissional.usuario.nome_completo }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  {% if modo_gestor %}
-    <label>CPF:</label>
-    <input type="text" name="cpf" required><br>
+    <label>Email:</label>
+    <input
+      type="email"
+      name="email"
+      value="{% if profissional %}{{ profissional.usuario.email }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-    <label>Senha:</label>
-    <input type="password" name="senha" required><br>
-  {% endif %}
+    {% if modo_gestor %}
+      <label>CPF:</label>
+      <input
+        type="text"
+        name="cpf"
+        value="{% if profissional %}{{ profissional.usuario.cpf }}{% endif %}"
+        required
+      ><br>
 
-  <label>Telefone:</label>
-  <input type="text" name="telefone" value="{{ profissional.telefone }}" {% if not modo_gestor %}readonly{% endif %}><br>
+      <label>Senha:</label>
+      <input
+        type="password"
+        name="senha"
+        {% if not edicao %}required{% endif %}
+      ><br>
 
-  <label>Data de Nascimento:</label>
-  <input type="date" name="dataNascimento" value="{{ profissional.data_nascimento }}" {% if not modo_gestor %}readonly{% endif %}><br>
+      <label for="gestor">Gestor:</label>
+      <select name="gestor" id="gestor" required>
+        <option value="">— selecione —</option>
+        {% for gestor in gestores %}
+          <option
+            value="{{ gestor.id }}"
+            {% if profissional and profissional.gestor_id == gestor.id %}selected{% endif %}
+          >
+            {{ gestor.nome_completo }}
+          </option>
+        {% endfor %}
+      </select><br>
+    {% endif %}
 
-  <label>Remuneração:</label>
-  <input type="text" name="remuneracao" value="{{ profissional.remuneracao }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Telefone:</label>
+    <input
+      type="text"
+      name="telefone"
+      value="{% if profissional %}{{ profissional.telefone }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  <label>Data de Admissão:</label>
-  <input type="date" name="dataAdmissao" value="{{ profissional.data_admissao }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Data de Nascimento:</label>
+    <input
+      type="date"
+      name="dataNascimento"
+      value="{% if profissional %}{{ profissional.data_nascimento }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  <label>Horário de Entrada:</label>
-  <input type="time" name="horarioEntrada" value="{{ profissional.horario_entrada }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Remuneração:</label>
+    <input
+      type="text"
+      name="remuneracao"
+      value="{% if profissional %}{{ profissional.remuneracao }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  <label>Início do Intervalo:</label>
-  <input type="time" name="intervaloInicio" value="{{ profissional.intervalo_inicio }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Data de Admissão:</label>
+    <input
+      type="date"
+      name="dataAdmissao"
+      value="{% if profissional %}{{ profissional.data_admissao }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  <label>Fim do Intervalo:</label>
-  <input type="time" name="intervaloFim" value="{{ profissional.intervalo_fim }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Horário de Entrada:</label>
+    <input
+      type="time"
+      name="horarioEntrada"
+      value="{% if profissional %}{{ profissional.horario_entrada|time:'H:i' }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  <label>Horário de Saída:</label>
-  <input type="time" name="horarioSaida" value="{{ profissional.horario_saida }}" {% if not modo_gestor %}readonly{% endif %}><br>
+    <label>Início do Intervalo:</label>
+    <input
+      type="time"
+      name="intervaloInicio"
+      value="{% if profissional %}{{ profissional.intervalo_inicio|time:'H:i' }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-  {% if modo_gestor %}
-    <button type="submit">Salvar</button>
-  {% endif %}
-</form>
+    <label>Fim do Intervalo:</label>
+    <input
+      type="time"
+      name="intervaloFim"
+      value="{% if profissional %}{{ profissional.intervalo_fim|time:'H:i' }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
 
-<a href="{% url 'inicio' %}">Voltar</a>
+    <label>Horário de Saída:</label>
+    <input
+      type="time"
+      name="horarioSaida"
+      value="{% if profissional %}{{ profissional.horario_saida|time:'H:i' }}{% endif %}"
+      {% if not modo_gestor %}readonly{% endif %}
+    ><br>
+
+    {% if modo_gestor %}
+      <div class="form-actions">
+        <button type="submit">
+          {% if edicao %}Salvar Alterações{% else %}Cadastrar{% endif %}
+        </button>
+      </div>
+    {% endif %}
+  </form>
+
+  <p>
+    <a href="{% url 'inicio' %}">← Voltar</a>
+  </p>
 {% endblock %}

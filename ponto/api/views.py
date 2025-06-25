@@ -1,5 +1,4 @@
-from rest_framework import viewsets, permissions
-from rest_framework.decorators import action
+from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from django.db.models import Q
 from ..models import Mensagem
@@ -7,27 +6,39 @@ from ..serializers import MensagemSerializer
 
 class ChatViewSet(viewsets.ModelViewSet):
     """
-    GET  /api/chat/conversas/?gestor=<id>&usuario=<id>  → lista trocas entre esses dois.
-    POST /api/chat/                                   → cria nova mensagem (remetente=request.user).
+    POST /api/chat/           → cria nova mensagem (remetente=request.user)
+    GET  /api/chat/?gestor=&usuario=  → lista trocas entre esses dois usuários
     """
-    queryset = Mensagem.objects.all()
+    queryset = Mensagem.objects.none()
     serializer_class = MensagemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_create(self, serializer):
-        # assegura que o remetente seja sempre o usuário autenticado
-        serializer.save(remetente=self.request.user)
+    def get_queryset(self):
+        gestor_id  = self.request.query_params.get('gestor')
+        usuario_id = (self.request.query_params.get('usuario') or
+                      self.request.query_params.get('user'))
+        if gestor_id and usuario_id:
+            return Mensagem.objects.filter(
+                Q(remetente_id__in=[gestor_id, usuario_id]) &
+                Q(destinatario_id__in=[gestor_id, usuario_id])
+            ).order_by('criado_em')
+        return Mensagem.objects.none()
 
-    @action(detail=False, methods=['get'], url_path='conversas')
-    def conversas(self, request):
-        gestor_id    = request.query_params.get('gestor')
-        usuario_id   = request.query_params.get('usuario') or request.query_params.get('user')
+    def list(self, request, *args, **kwargs):
+        gestor_id  = request.query_params.get('gestor')
+        usuario_id = (request.query_params.get('usuario') or
+                      request.query_params.get('user'))
+        # Se faltarem params, erro 400:
         if not gestor_id or not usuario_id:
-            return Response([], status=400)
-
-        msgs = Mensagem.objects.filter(
-            Q(remetente_id__in=[gestor_id, usuario_id]) &
-            Q(destinatario_id__in=[gestor_id, usuario_id])
-        ).order_by('criado_em')
-        serializer = self.get_serializer(msgs, many=True)
+            return Response(
+                {'detail': 'Parâmetros gestor e usuário são obrigatórios.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        # Caso contrário, mesmo sem mensagens, devolve array vazio:
+        qs = self.get_queryset()
+        serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
+
+    def perform_create(self, serializer):
+        # garante que remetente é sempre o user logado
+        serializer.save(remetente=self.request.user)

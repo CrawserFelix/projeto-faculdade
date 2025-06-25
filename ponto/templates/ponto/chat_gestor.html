@@ -5,8 +5,9 @@
   <aside class="chat-lista">
     <h3>Profissionais</h3>
     <ul>
+      <li><a href="{% url 'chat_gestor' %}">Listar equipe</a></li>
       {% for prof, count in unread_items %}
-      <li class="{% if prof.id == ativo.id %}ativo{% endif %}">
+      <li>
         <a href="{% url 'chat_gestor_conversa' prof.id %}">
           {{ prof.usuario.nome_completo }}
           {% if count %}<span class="badge">{{ count }}</span>{% endif %}
@@ -19,25 +20,30 @@
   <section class="chat-conversa">
     {% if ativo %}
     <h3>Conversa com {{ ativo.usuario.nome_completo }}</h3>
-    <div id="chat-box">
-      {% for msg in conversa %}
-      <div class="mensagem {% if msg.remetente == request.user %}minha{% else %}deles{% endif %}">
-        <small>{{ msg.criado_em|date:"H:i" }}</small>
-        <p>{{ msg.conteudo }}</p>
+    <!-- container para o JS -->
+    <div id="chat-container"
+         data-user-id="{{ request.user.id }}"
+         data-prof-id="{{ ativo.usuario.id }}">
+      <div id="chat-box">
+        <!-- mensagens iniciais carregadas no server-render -->
+        {% for msg in conversa %}
+        <div class="mensagem {% if msg.remetente == request.user %}minha{% else %}deles{% endif %}">
+          <small>{{ msg.criado_em|date:"H:i" }}</small>
+          <p>{{ msg.conteudo }}</p>
+        </div>
+        {% endfor %}
       </div>
-      {% endfor %}
+      <form id="chat-form">
+        {% csrf_token %}
+        <input type="text" id="conteudo" placeholder="Escreva..." required>
+        <button type="submit">Enviar</button>
+      </form>
     </div>
-    <form id="chat-form" method="post">
-      {% csrf_token %}
-      <input type="hidden" name="destinatario" id="destinatario" value="{{ ativo.usuario.id }}">
-      <input type="text" name="conteudo" id="conteudo" placeholder="Escreva..." required>
-      <button type="submit">Enviar</button>
-    </form>
     {% else %}
     <p>Selecione um profissional para começar a conversar.</p>
     {% endif %}
   </section>
 </div>
 
-<script src="{% static 'js/chat_profissinal.js' %}"></script>
+<script src="{% static 'js/chat_gestor.js' %}"></script>
 {% endblock %}
