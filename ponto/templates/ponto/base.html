@@ -19,6 +19,7 @@
             <li><a href="{% url 'listar_folhas' %}">Folhas de Ponto</a></li>
             <li><a href="{% url 'chat_gestor' %}">Fale com os profissionais</a></li>
             {% else %}
+            <li><a href="{% url 'cadastro_profissional_usuario' %}">Meus Dados</a></li>
             <li><a href="{% url 'visualizar_folha' user.profissional.id %}">Minha Folha</a></li>
             <li><a href="{% url 'chat' %}">Falar com o Gestor</a></li>
             {% endif %}

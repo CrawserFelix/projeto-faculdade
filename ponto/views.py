@@ -1,7 +1,7 @@
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from datetime import datetime
-from calendar import month_name, monthrange
+from datetime import datetime, calendar, date
+from calendar import calendar, month_name, monthrange
 from django.views.decorators.http import require_GET
 from collections import defaultdict
 from django.contrib import messages
@@ -112,7 +112,6 @@ def cadastrar_profissional(request):
         "gestores": gestores,
     })
 
-
 @login_required
 def cadastro_profissional_usuario(request):
     """Profissional comum vê seus dados."""
@@ -122,11 +121,32 @@ def cadastro_profissional_usuario(request):
         "profissional": prof
     })
 
-
 @login_required
+@user_passes_test(lambda u: u.is_staff)
 def listar_profissionais(request):
+    # Inicia o queryset buscando todos os profissionais com o usuário relacionado
     profissionais = Profissional.objects.select_related('usuario').all()
-    return render(request, "ponto/lista.html", {"profissionais": profissionais})
+
+    # Filtra por nome, se veio no GET
+    nome = request.GET.get('nome')
+    if nome:
+        profissionais = profissionais.filter(
+            usuario__nome_completo__icontains=nome
+        )
+
+    # Filtra por CPF (removendo pontos e traços), se veio no GET
+    cpf = request.GET.get('cpf')
+    if cpf:
+        cpf_clean = cpf.replace('.', '').replace('-', '')
+        profissionais = profissionais.filter(
+            usuario__cpf__icontains=cpf_clean
+        )
+
+    # Renderiza passando o queryset filtrado
+    return render(request, "ponto/lista.html", {
+        "profissionais": profissionais
+    })
+
 
 
 @login_required
@@ -187,6 +207,51 @@ def registrar_ponto(request):
         else:
             messages.error(request, 'Profissional não encontrado.')
     return redirect('inicio')
+
+def obter_datas_do_mes(ano, mes):
+    """
+    Retorna lista de objetos date para cada dia do mês especificado.
+    """
+    qtd_dias = calendar.monthrange(ano, mes)[1]  # usa o módulo calendar
+    return [date(ano, mes, dia) for dia in range(1, qtd_dias + 1)]
+
+# Exemplo de uso na view:
+datas = obter_datas_do_mes(2025, 6)
+
+@login_required
+@user_passes_test(lambda u: u.is_staff)  # só gestores podem
+def adicionar_registro(request, profissional_id):
+    if request.method != 'POST':
+        return HttpResponseBadRequest("Método inválido.")
+
+    prof = get_object_or_404(Profissional, id=profissional_id)
+    data_str = request.POST.get('data')     # ex: "2025-06-23"
+    hora_str = request.POST.get('hora')     # ex: "14:30"
+    tipo = request.POST.get('tipo')         # "entrada", "pausa", ...
+
+    if not data_str or not hora_str or not tipo:
+        return HttpResponseBadRequest("Dados incompletos.")
+
+    try:
+        data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
+        hora_obj = datetime.strptime(hora_str, "%H:%M").time()
+    except ValueError:
+        return HttpResponseBadRequest("Formato inválido.")
+
+    novo = RegistroPonto.objects.create(
+        profissional=prof,
+        data=data_obj,
+        hora=hora_obj,
+        tipo=tipo
+    )
+
+    return JsonResponse({
+        "mensagem": "Registro criado com sucesso.",
+        "id": novo.id,
+        "data": novo.data.strftime("%d/%m/%Y"),
+        "tipo": novo.tipo,
+        "hora": novo.hora.strftime("%H:%M")
+    })
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)

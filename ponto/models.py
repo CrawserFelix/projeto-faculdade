@@ -86,7 +86,7 @@ class Profissional(models.Model):
         ordering = ['usuario__nome_completo']
 
     def __str__(self):
-        return f"{self.usuario.nome_completo} ({self.cpf})"
+        return f"{self.usuario.nome_completo} ({self.usuario.cpf})"
 
 class RegistroPonto(models.Model):
     profissional = models.ForeignKey(Profissional, on_delete=models.CASCADE)

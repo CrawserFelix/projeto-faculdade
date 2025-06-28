@@ -2,17 +2,21 @@
 {% load static %}
 
 {% block content %}
-<h2>Folha de Ponto - {{ profissional.usuario.nome_completo }}</h2>
+<h2>Folha de Ponto – {{ profissional.usuario.nome_completo }}</h2>
 
 <div class="navegacao-meses">
-  <a href="?mes={{ mes_anterior.mes }}&ano={{ mes_anterior.ano }}">&larr; Mês anterior</a>
+  <a href="?mes={{ mes_anterior.mes }}&ano={{ mes_anterior.ano }}">← Mês anterior</a>
   <strong>{{ mes }}/{{ ano }}</strong>
-  <a href="?mes={{ mes_proximo.mes }}&ano={{ mes_proximo.ano }}">Próximo mês &rarr;</a>
+  <a href="?mes={{ mes_proximo.mes }}&ano={{ mes_proximo.ano }}">Próximo mês →</a>
 </div>
 
-<form method="post" action="{% url 'salvar_alteracoes_folha' profissional.id %}?mes={{ mes }}&ano={{ ano }}">
+<form method="post"
+      action="{% url 'salvar_alteracoes_folha' profissional.id %}?mes={{ mes }}&ano={{ ano }}">
   {% csrf_token %}
-  <table class="tabela-folha-ponto">
+
+  <table id="folha-tabela"
+         class="tabela-folha-ponto"
+         data-prof-id="{{ profissional.id }}">
     <thead>
       <tr>
         <th>Data</th>
@@ -20,44 +24,77 @@
         <th>Pausa</th>
         <th>Retorno</th>
         <th>Saída</th>
+        {% if pode_editar %}<th>Ações</th>{% endif %}
       </tr>
     </thead>
     <tbody>
+      {# Agrupa registros por data #}
       {% regroup registros by data as dias %}
       {% for dia in dias %}
-      <tr>
+      <tr data-date="{{ dia.grouper|date:'Y-m-d' }}">
         <td>{{ dia.grouper|date:"d/m/Y" }}</td>
+
+        {# Para cada tipo padrão, exibe hora ou traço #}
         {% for tipo in tipos_padrao %}
-        <td>
-          {% with slots=dia.list|dictsort:"tipo" %}{% endwith %}
-          {% comment %} Exibe o registro correspondente, se existir {% endcomment %}
-          {% for reg in dia.list %}
-            {% if reg.tipo == tipo %}
-              {% if pode_editar %}
-                <input type="time" name="registro_{{ reg.id }}" value="{{ reg.hora|time:'H:i' }}">
-                <input type="checkbox" name="editar_{{ reg.id }}">
-              {% else %}
-                {{ reg.hora|time:'H:i' }}
-              {% endif %}
+        <td data-tipo="{{ tipo }}">
+          {% comment %}Assume que já preparou no view um dict tipo→hora ou None{% endcomment %}
+          {% if dia.dict_times|get_item:tipo %}
+            {% if pode_editar %}
+              <input type="time"
+                     name="registro_{{ dia.dict_times|get_item:tipo.id }}"
+                     value="{{ dia.dict_times|get_item:tipo.hora }}">
+              <input type="checkbox" name="editar_{{ dia.dict_times|get_item:tipo.id }}">
+            {% else %}
+              {{ dia.dict_times|get_item:tipo.hora }}
             {% endif %}
-          {% empty %}
-            -
-          {% endfor %}
+          {% else %}
+            –  
+          {% endif %}
         </td>
         {% endfor %}
+
+        {% if pode_editar %}
+        <td>
+          {# Botão para abrir o formulário inline #}
+          <button type="button"
+                  class="botao-adicionar-registro"
+                  data-date="{{ dia.grouper|date:'Y-m-d' }}">
+            Adicionar Registro
+          </button>
+
+          {# Mini-formulário, inicialmente oculto #}
+          <div class="form-adicionar" style="display:none;">
+            <select name="tipo_novo">
+              <option value="entrada">Entrada</option>
+              <option value="pausa">Pausa</option>
+              <option value="retorno">Retorno</option>
+              <option value="saida">Saída</option>
+            </select>
+            <input type="time" name="hora_nova">
+            <button type="button" class="btn-salvar-registro">Salvar</button>
+            <button type="button" class="btn-cancelar-registro">Cancelar</button>
+          </div>
+        </td>
+        {% endif %}
       </tr>
       {% empty %}
-      <tr><td colspan="5">Sem registros encontrados.</td></tr>
+      <tr>
+        <td colspan="{% if pode_editar %}6{% else %}5{% endif %}">
+          Sem registros encontrados.
+        </td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
 
   {% if pode_editar %}
-  <div class="form-actions">
+  <div class="form-acoes">
     <button type="submit">Salvar alterações</button>
   </div>
   {% endif %}
 </form>
 
-<a href="{% url 'listar_profissionais' %}">Voltar</a>
+<a href="{% url 'listar_profissionais' %}">← Voltar</a>
+
+<script src="{% static 'js/folha.js' %}"></script>
 {% endblock %}

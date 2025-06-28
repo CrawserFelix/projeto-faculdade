@@ -1,4 +1,5 @@
 {% extends "ponto/base.html" %}
+{% load static %}
 
 {% block content %}
   <h2>
@@ -11,37 +12,43 @@
     {% endif %}
   </h2>
 
-  <form method="post">
+  <form id="cadastroForm" method="post">
     {% csrf_token %}
 
-    <label>Nome Completo:</label>
+    <label for="nomeCompleto">Nome Completo:</label>
     <input
       type="text"
+      id="nomeCompleto"
       name="nomeCompleto"
       value="{% if profissional %}{{ profissional.usuario.nome_completo }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Email:</label>
+    <label for="email">Email:</label>
     <input
       type="email"
+      id="email"
       name="email"
       value="{% if profissional %}{{ profissional.usuario.email }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
     {% if modo_gestor %}
-      <label>CPF:</label>
+      <label for="cpf">CPF:</label>
       <input
+        maxlength="14"
         type="text"
+        id="cpf"
         name="cpf"
         value="{% if profissional %}{{ profissional.usuario.cpf }}{% endif %}"
         required
-      ><br>
+      >
+      <span id="erroCPF" class="erro"></span>
 
-      <label>Senha:</label>
+      <label for="senha">Senha:</label>
       <input
         type="password"
+        id="senha"
         name="senha"
         {% if not edicao %}required{% endif %}
       ><br>
@@ -60,65 +67,73 @@
       </select><br>
     {% endif %}
 
-    <label>Telefone:</label>
+    <label for="telefone">Telefone:</label>
     <input
       type="text"
+      id="telefone"
       name="telefone"
       value="{% if profissional %}{{ profissional.telefone }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Data de Nascimento:</label>
+    <label for="dataNascimento">Data de Nascimento:</label>
     <input
       type="date"
+      id="dataNascimento"
       name="dataNascimento"
       value="{% if profissional %}{{ profissional.data_nascimento }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Remuneração:</label>
+    <label for="remuneracao">Remuneração:</label>
     <input
       type="text"
+      id="remuneracao"
       name="remuneracao"
       value="{% if profissional %}{{ profissional.remuneracao }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Data de Admissão:</label>
+    <label for="dataAdmissao">Data de Admissão:</label>
     <input
       type="date"
+      id="dataAdmissao"
       name="dataAdmissao"
       value="{% if profissional %}{{ profissional.data_admissao }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Horário de Entrada:</label>
+    <label for="horarioEntrada">Horário de Entrada:</label>
     <input
       type="time"
+      id="horarioEntrada"
       name="horarioEntrada"
       value="{% if profissional %}{{ profissional.horario_entrada|time:'H:i' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Início do Intervalo:</label>
+    <label for="intervaloInicio">Início do Intervalo:</label>
     <input
       type="time"
+      id="intervaloInicio"
       name="intervaloInicio"
       value="{% if profissional %}{{ profissional.intervalo_inicio|time:'H:i' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Fim do Intervalo:</label>
+    <label for="intervaloFim">Fim do Intervalo:</label>
     <input
       type="time"
+      id="intervaloFim"
       name="intervaloFim"
       value="{% if profissional %}{{ profissional.intervalo_fim|time:'H:i' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    <label>Horário de Saída:</label>
+    <label for="horarioSaida">Horário de Saída:</label>
     <input
       type="time"
+      id="horarioSaida"
       name="horarioSaida"
       value="{% if profissional %}{{ profissional.horario_saida|time:'H:i' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
@@ -136,4 +151,7 @@
   <p>
     <a href="{% url 'inicio' %}">← Voltar</a>
   </p>
+
+  <!-- Inclusão do script de máscaras e validações -->
+  <script src="{% static 'js/cadastro.js' %}" defer></script>
 {% endblock %}
