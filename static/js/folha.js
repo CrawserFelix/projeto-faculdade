@@ -1,16 +1,18 @@
-document.addEventListener('DOMContentLoaded', () => {
-  // Seleciona todos os inputs de horário na tabela de folha
-  document.querySelectorAll('#folha-tabela input[type="time"]').forEach(input => {
-    // Garante que o <td> pai tenha position:relative para posicionar o botão
-    const td = input.closest('td');
-    td.style.position = 'relative';
+// static/js/folha.js
 
-    // Se não houver data-original no template, armazena agora o valor inicial
+document.addEventListener('DOMContentLoaded', () => {
+  // Seleciona todos os campos de hora na tabela
+  document.querySelectorAll('#folha-tabela input[type="time"]').forEach(input => {
+    // Garante que o <td> pai seja position: relative para posicionar o botão
+    const td = input.closest('td');
+    if (td) td.style.position = 'relative';
+
+    // Se não houver data-original no template, define agora com o valor inicial
     if (!input.dataset.original) {
       input.dataset.original = input.value;
     }
 
-    // Ajusta padding do input para não ficar embaixo do botão
+    // Dá padding right para não ficar sob o botão de limpar
     input.style.paddingRight = '25px';
 
     // Cria o botão de limpar (X)
@@ -19,9 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
     btnClear.className = 'clear-time';
     btnClear.title = 'Limpar horário';
     btnClear.innerHTML = '&times;';
-    td.appendChild(btnClear);
+    if (td) td.appendChild(btnClear);
 
-    // Quando o gestor altera o valor, compara com o original e destaca
+    // Destaca o campo quando o valor for diferente do original
     input.addEventListener('input', () => {
       if (input.value !== input.dataset.original) {
         input.classList.add('campo-editado');
@@ -30,10 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Ao clicar no X, limpa o campo e dispara o evento de input
+    // Ao clicar no X, limpa o campo e sinaliza exclusão se for registro existente
     btnClear.addEventListener('click', () => {
+      // Limpa o valor e dispara o evento de input para realçar a borda
       input.value = '';
       input.dispatchEvent(new Event('input'));
+
+      // Se for um registro já existente, adiciona um hidden para exclusão
+      if (input.name.startsWith('registro_')) {
+        const id = input.name.split('_')[1];  // ex: registro_17 → ['registro','17']
+        const hiddenField = document.createElement('input');
+        hiddenField.type = 'hidden';
+        hiddenField.name = `excluir_${id}`;   // ex: excluir_17
+        hiddenField.value = '1';
+        input.form.appendChild(hiddenField);
+      }
     });
   });
 });

@@ -65,11 +65,9 @@
       <select name="gestor" id="gestor" required>
         <option value="">— selecione —</option>
         {% for gestor in gestores %}
-          <option
-            value="{{ gestor.id }}"
-            {% if profissional and profissional.gestor_id == gestor.id %}selected{% endif %}
-          >
-            {{ gestor.usuario.nome_completo }}
+          <option value="{{ gestor.id }}"
+                  {% if profissional and profissional.gestor_id == gestor.id %}selected{% endif %}>
+            {{ gestor.nome_completo }}
           </option>
         {% endfor %}
       </select><br>
@@ -91,7 +89,7 @@
       type="date"
       id="dataNascimento"
       name="dataNascimento"
-      value="{% if profissional %}{{ profissional.data_nascimento }}{% endif %}"
+      value="{% if profissional %}{{ profissional.data_nascimento|date:'Y-m-d' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
@@ -111,7 +109,7 @@
       type="date"
       id="dataAdmissao"
       name="dataAdmissao"
-      value="{% if profissional %}{{ profissional.data_admissao }}{% endif %}"
+      value="{% if profissional %}{{ profissional.data_admissao|date:'Y-m-d' }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 

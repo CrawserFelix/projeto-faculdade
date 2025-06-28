@@ -26,71 +26,95 @@
       {% for dia in dias %}
       <tr data-date="{{ dia.data|date:'Y-m-d' }}">
         <td>{{ dia.data|date:"d/m/Y" }}</td>
-        <!-- Entrada -->
+
+        {# Entrada #}
         <td>
           {% if dia.entrada %}
             {% if pode_editar %}
-              <input type="time" name="registro_{{ dia.entrada.id }}" value="{{ dia.entrada.hora|time:'H:i' }}" **data-original="{{ dia.entrada.hora|time:'H:i' }}"**>
+              <input type="time"
+                     name="registro_{{ dia.entrada.id }}"
+                     value="{{ dia.entrada.hora|time:'H:i' }}"
+                     data-original="{{ dia.entrada.hora|time:'H:i' }}">
               <button type="button" class="clear-time" title="Limpar horário">&times;</button>
             {% else %}
               {{ dia.entrada.hora|time:"H:i" }}
             {% endif %}
           {% else %}
             {% if pode_editar %}
-              <input type="time" name="novo_entrada_{{ dia.data|date:'Y-m-d' }}">
+              <input type="time"
+                     name="novo_entrada_{{ dia.data|date:'Y-m-d' }}"
+                     data-original="">
             {% else %}
-              – 
+              –
             {% endif %}
           {% endif %}
         </td>
-        <!-- Pausa (Início do Intervalo) -->
+
+        {# Pausa #}
         <td>
           {% if dia.pausa %}
             {% if pode_editar %}
-              <input type="time" name="registro_{{ dia.pausa.id }}" value="{{ dia.pausa.hora|time:'H:i' }}" **data-original="{{ dia.pausa.hora|time:'H:i' }}"**>
+              <input type="time"
+                     name="registro_{{ dia.pausa.id }}"
+                     value="{{ dia.pausa.hora|time:'H:i' }}"
+                     data-original="{{ dia.pausa.hora|time:'H:i' }}">
               <button type="button" class="clear-time" title="Limpar horário">&times;</button>
             {% else %}
               {{ dia.pausa.hora|time:"H:i" }}
             {% endif %}
           {% else %}
             {% if pode_editar %}
-              <input type="time" name="novo_pausa_{{ dia.data|date:'Y-m-d' }}">
+              <input type="time"
+                     name="novo_pausa_{{ dia.data|date:'Y-m-d' }}"
+                     data-original="">
             {% else %}
-              – 
+              –
             {% endif %}
           {% endif %}
         </td>
-        <!-- Retorno (Fim do Intervalo) -->
+
+        {# Retorno #}
         <td>
           {% if dia.retorno %}
             {% if pode_editar %}
-              <input type="time" name="registro_{{ dia.retorno.id }}" value="{{ dia.retorno.hora|time:'H:i' }}" **data-original="{{ dia.retorno.hora|time:'H:i' }}"**>
+              <input type="time"
+                     name="registro_{{ dia.retorno.id }}"
+                     value="{{ dia.retorno.hora|time:'H:i' }}"
+                     data-original="{{ dia.retorno.hora|time:'H:i' }}">
               <button type="button" class="clear-time" title="Limpar horário">&times;</button>
             {% else %}
               {{ dia.retorno.hora|time:"H:i" }}
             {% endif %}
           {% else %}
             {% if pode_editar %}
-              <input type="time" name="novo_retorno_{{ dia.data|date:'Y-m-d' }}">
+              <input type="time"
+                     name="novo_retorno_{{ dia.data|date:'Y-m-d' }}"
+                     data-original="">
             {% else %}
-              – 
+              –
             {% endif %}
           {% endif %}
         </td>
-        <!-- Saída -->
+
+        {# Saída #}
         <td>
           {% if dia.saida %}
             {% if pode_editar %}
-              <input type="time" name="registro_{{ dia.saida.id }}" value="{{ dia.saida.hora|time:'H:i' }}" **data-original="{{ dia.saida.hora|time:'H:i' }}"**>
+              <input type="time"
+                     name="registro_{{ dia.saida.id }}"
+                     value="{{ dia.saida.hora|time:'H:i' }}"
+                     data-original="{{ dia.saida.hora|time:'H:i' }}">
               <button type="button" class="clear-time" title="Limpar horário">&times;</button>
             {% else %}
               {{ dia.saida.hora|time:"H:i" }}
             {% endif %}
           {% else %}
             {% if pode_editar %}
-              <input type="time" name="novo_saida_{{ dia.data|date:'Y-m-d' }}">
+              <input type="time"
+                     name="novo_saida_{{ dia.data|date:'Y-m-d' }}"
+                     data-original="">
             {% else %}
-              – 
+              –
             {% endif %}
           {% endif %}
         </td>
@@ -107,4 +131,5 @@
 </form>
 
 <a href="{% url 'listar_profissionais' %}">← Voltar</a>
+<script src="{% static 'js/folha.js' %}"></script>
 {% endblock %}
