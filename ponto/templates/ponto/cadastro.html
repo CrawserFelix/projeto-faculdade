@@ -15,6 +15,7 @@
   <form id="cadastroForm" method="post">
     {% csrf_token %}
 
+    <!-- Nome Completo -->
     <label for="nomeCompleto">Nome Completo:</label>
     <input
       type="text"
@@ -22,39 +23,44 @@
       name="nomeCompleto"
       value="{% if profissional %}{{ profissional.usuario.nome_completo }}{% endif %}"
       {% if not modo_gestor %}readonly{% endif %}
-      {% modo_gestor %}required{% endif %}
-    ><br>
-
-    <label for="email">Email:</label>
-    <input
-      type="email"
-      id="email"
-      name="email"
-      value="{% if profissional %}{{ profissional.usuario.email }}{% endif %}"
-      {% if not modo_gestor %}readonly{% endif %}
-      {% modo_gestor %}required{% endif %}
+      {% if modo_gestor %}required{% endif %}
     ><br>
 
     {% if modo_gestor %}
+      <!-- CPF (edição e cadastro pelo gestor) -->
       <label for="cpf">CPF:</label>
       <input
-        maxlength="14"
         type="text"
         id="cpf"
         name="cpf"
+        maxlength="14"
         value="{% if profissional %}{{ profissional.usuario.cpf }}{% endif %}"
         required
       >
-      <span id="erroCPF" class="erro"></span>
+      <span id="erroCPF" class="erro"></span><br>
 
-      <label for="senha">Senha:</label>
+      {% if not edicao %}
+        <!-- Senha somente no cadastro -->
+        <label for="senha">Senha:</label>
+        <input
+          type="password"
+          id="senha"
+          name="senha"
+          required
+        ><br>
+      {% endif %}
+
+      <!-- Email -->
+      <label for="email">Email:</label>
       <input
-        type="password"
-        id="senha"
-        name="senha"
-        {% if not edicao %}required{% endif %}
+        type="email"
+        id="email"
+        name="email"
+        value="{% if profissional %}{{ profissional.usuario.email }}{% endif %}"
+        required
       ><br>
 
+      <!-- Gestor responsável -->
       <label for="gestor">Gestor:</label>
       <select name="gestor" id="gestor" required>
         <option value="">— selecione —</option>
@@ -63,12 +69,13 @@
             value="{{ gestor.id }}"
             {% if profissional and profissional.gestor_id == gestor.id %}selected{% endif %}
           >
-            {{ gestor.nome_completo }}
+            {{ gestor.usuario.nome_completo }}
           </option>
         {% endfor %}
       </select><br>
     {% endif %}
 
+    <!-- Telefone -->
     <label for="telefone">Telefone:</label>
     <input
       type="text"
@@ -78,6 +85,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Data de Nascimento -->
     <label for="dataNascimento">Data de Nascimento:</label>
     <input
       type="date"
@@ -87,6 +95,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Remuneração -->
     <label for="remuneracao">Remuneração:</label>
     <input
       type="text"
@@ -96,6 +105,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Data de Admissão -->
     <label for="dataAdmissao">Data de Admissão:</label>
     <input
       type="date"
@@ -105,6 +115,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Horário de Entrada -->
     <label for="horarioEntrada">Horário de Entrada:</label>
     <input
       type="time"
@@ -114,6 +125,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Início do Intervalo -->
     <label for="intervaloInicio">Início do Intervalo:</label>
     <input
       type="time"
@@ -123,6 +135,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Fim do Intervalo -->
     <label for="intervaloFim">Fim do Intervalo:</label>
     <input
       type="time"
@@ -132,6 +145,7 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
+    <!-- Horário de Saída -->
     <label for="horarioSaida">Horário de Saída:</label>
     <input
       type="time"
@@ -141,19 +155,40 @@
       {% if not modo_gestor %}readonly{% endif %}
     ><br>
 
-    {% if modo_gestor %}
-      <div class="form-actions">
+    {% if not modo_gestor %}
+      <!-- Troca de Senha pelo profissional -->
+      <label for="novaSenha">Nova Senha:</label>
+      <input
+        type="password"
+        id="novaSenha"
+        name="novaSenha"
+        required
+      ><br>
+
+      <label for="confirmarSenha">Confirmar Senha:</label>
+      <input
+        type="password"
+        id="confirmarSenha"
+        name="confirmarSenha"
+        required
+      ><br>
+    {% endif %}
+
+    <!-- Botões de Submissão -->
+    <div class="form-actions">
+      {% if modo_gestor %}
         <button type="submit">
           {% if edicao %}Salvar Alterações{% else %}Cadastrar{% endif %}
         </button>
-      </div>
-    {% endif %}
+      {% else %}
+        <button type="submit">Alterar Senha</button>
+      {% endif %}
+    </div>
+
   </form>
 
-  <p>
-    <a href="{% url 'inicio' %}">← Voltar</a>
-  </p>
+  <p><a href="{% url 'inicio' %}">← Voltar</a></p>
 
-  <!-- Inclusão do script de máscaras e validações -->
+  <!-- Script de máscaras e validações -->
   <script src="{% static 'js/cadastro.js' %}" defer></script>
 {% endblock %}

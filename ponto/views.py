@@ -5,7 +5,7 @@ from calendar import month_name, monthrange
 from django.views.decorators.http import require_GET
 from collections import defaultdict
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout, get_user_model
+from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.urls import reverse
 from django.db.models import Q
@@ -114,11 +114,27 @@ def cadastrar_profissional(request):
 
 @login_required
 def cadastro_profissional_usuario(request):
-    """Profissional comum vê seus dados."""
     prof = Profissional.objects.filter(usuario=request.user).first()
+    if request.method == "POST":
+        nova = request.POST.get("novaSenha")
+        conf = request.POST.get("confirmarSenha")
+        # Validação dos campos de senha
+        if not nova or not conf:
+            messages.error(request, "Preencha ambos os campos de senha.")
+        elif nova != conf:
+            messages.error(request, "As senhas não coincidem. Por favor, tente novamente.")
+        else:
+            # Atualiza a senha do usuário
+            u = request.user  # instancia do modelo Usuario
+            u.set_password(nova)
+            u.save()
+            update_session_auth_hash(request, u)  # mantém o usuário logado com a nova senha
+            messages.success(request, "Senha alterada com sucesso!")
+        return redirect('cadastro_profissional_usuario')
+    # GET: exibe formulário com dados atuais (readonly)
     return render(request, "ponto/cadastro.html", {
         "modo_gestor": False,
-        "profissional": prof
+        "profissional": prof,
     })
 
 @login_required
@@ -153,27 +169,45 @@ def listar_profissionais(request):
 @user_passes_test(lambda u: u.is_staff)
 def editar_profissional(request, profissional_id):
     prof = get_object_or_404(Profissional, id=profissional_id)
+    User = get_user_model()  # nosso modelo Usuario customizado
     if request.method == 'POST':
-        # atualiza user
-        u = prof.usuario
+        u = prof.usuario  # usuário associado ao Profissional
+
+        # 1. Atualizar CPF do usuário, se alterado
+        cpf_raw = request.POST.get('cpf', '')
+        if cpf_raw:
+            new_cpf = cpf_raw.replace('.', '').replace('-', '')
+            if new_cpf != u.cpf:
+                # Verifica se já existe outro usuário com este CPF
+                if User.objects.filter(cpf=new_cpf).exists():
+                    messages.error(request, "Já existe um usuário com esse CPF.")
+                    return redirect('editar_profissional', profissional_id=prof.id)
+                u.cpf = new_cpf
+
+        # 2. Atualizar nome completo e email do usuário
         u.nome_completo = request.POST.get('nomeCompleto')
         u.email = request.POST.get('email')
+        # (Não vamos tratar campo de senha aqui, pois ele não é mais fornecido no formulário de edição)
+
         u.save()
-        # atualiza prof
+
+        # 3. Atualizar os campos do modelo Profissional
         prof.telefone = request.POST.get('telefone')
         prof.data_nascimento = request.POST.get('dataNascimento')
-        prof.remuneracao = request.POST.get('remuneracao').replace('.','').replace(',','.')
+        prof.remuneracao = request.POST.get('remuneracao', '0').replace('.', '').replace(',', '.')
         prof.data_admissao = request.POST.get('dataAdmissao')
         prof.horario_entrada = request.POST.get('horarioEntrada')
         prof.intervalo_inicio = request.POST.get('intervaloInicio')
         prof.intervalo_fim = request.POST.get('intervaloFim')
         prof.horario_saida = request.POST.get('horarioSaida')
-        # gestor
+
+        # Atualizar gestor selecionado (pode ser vazio)
         gestor_id = request.POST.get('gestor')
-        gestor_user = User.objects.filter(id=gestor_id, is_staff=True).first() if gestor_id else None
-        prof.gestor = gestor_user
+        prof.gestor = User.objects.filter(id=gestor_id, is_staff=True).first() if gestor_id else None
+
         prof.save()
-        messages.success(request, 'Profissional atualizado com sucesso!')
+
+        messages.success(request, "Profissional atualizado com sucesso!")
         return redirect('listar_profissionais')
     gestores = User.objects.filter(is_staff=True)
     return render(request, 'ponto/cadastro.html', {
