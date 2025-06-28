@@ -255,25 +255,11 @@ datas = obter_datas_do_mes(2025, 6)
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def salvar_alteracoes_folha(request, profissional_id):
-    """
-    Processa edição em lote da folha de ponto para um profissional:
-      - Atualiza todos os registros marcados (checkbox `editar_<id>`)
-      - Mantém mês/ano na querystring ao redirecionar de volta
-    """
+    hoje = datetime.today()
+    mes = int(request.GET.get('mes', hoje.month))
+    ano = int(request.GET.get('ano', hoje.year))
     prof = get_object_or_404(Profissional, id=profissional_id)
-
-    # lê mês e ano da querystring ou usa os atuais
-    mes_str = request.GET.get('mes')
-    ano_str = request.GET.get('ano')
-    try:
-        mes = int(mes_str) if mes_str and mes_str.isdigit() else datetime.today().month
-    except:
-        mes = datetime.today().month
-    try:
-        ano = int(ano_str) if ano_str and ano_str.isdigit() else datetime.today().year
-    except:
-        ano = datetime.today().year
-
+    # ... obtém mes e ano ...
     registros = RegistroPonto.objects.filter(
         profissional=prof,
         data__month=mes,
@@ -281,20 +267,26 @@ def salvar_alteracoes_folha(request, profissional_id):
     )
     alterados = 0
     created_count = 0
-    
+
+    # Atualiza registros existentes
     for ponto in registros:
-        chk = f'editar_{ponto.id}'
         time_field = f'registro_{ponto.id}'
-        if chk in request.POST:
+        if time_field in request.POST:
             hora_str = request.POST.get(time_field)
+            if hora_str == "":
+                # Usuário limpou o horário: exclui o registro
+                ponto.delete()
+                alterados += 1
+                continue
             try:
                 nova_hora = datetime.strptime(hora_str, '%H:%M').time()
-                if ponto.hora != nova_hora:
-                    ponto.hora = nova_hora
-                    ponto.save(update_fields=['hora'])
-                    alterados += 1
-            except:
+            except ValueError:
                 messages.error(request, f"Horário inválido em {ponto.data}")
+                continue
+            if ponto.hora != nova_hora:
+                ponto.hora = nova_hora
+                ponto.save(update_fields=['hora'])
+                alterados += 1
     # Processa novos registros adicionados via campos "novo_*"
     for key, val in request.POST.items():
         if key.startswith('novo_') and val:
@@ -315,7 +307,7 @@ def salvar_alteracoes_folha(request, profissional_id):
             RegistroPonto.objects.create(profissional=prof, data=data_obj, hora=hora_obj, tipo=tipo)
             created_count += 1
     if alterados and created_count:
-        messages.success(request, f"{alterados} registro(s) atualizado(s) e {created_count} registro(s) criado(s) com sucesso.")
+        messages.success(request, f"{alterados} registro(s) atualizado(s) e {created_count} criado(s).")
     elif alterados:
         messages.success(request, f"{alterados} registro(s) atualizado(s) com sucesso.")
     elif created_count:
@@ -323,7 +315,6 @@ def salvar_alteracoes_folha(request, profissional_id):
     else:
         messages.info(request, "Nenhuma alteração detectada.")
 
-    # reconstrói URL mantendo mês e ano
     url = reverse('visualizar_folha', args=[profissional_id])
     return redirect(f"{url}?mes={mes}&ano={ano}")
 

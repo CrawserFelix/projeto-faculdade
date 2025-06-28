@@ -432,3 +432,21 @@ input[type="time"].campo-editado {
   border-radius: 10px;
   color: #000;
 }
+
+.btn-salvar { 
+  background-color: #4CAF50; 
+  color: #fff; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+.btn-cancel { 
+  background-color: #ccc; 
+  color: #333; }
+
+.btn-excluir { 
+  background-color: #f8d7da; 
+  color: #721c24; 
+  border: 1px solid #f5c6cb; }
+
+@media (max-width: 600px) {
+  .form-actions button { width: 100%; margin-bottom: 10px; }
+}

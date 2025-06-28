@@ -15,22 +15,52 @@ function aplicarMascaraCPF(campo) {
 
 // Validação de CPF
 function validarCPF(cpf) {
-    cpf = cpf.replace(/\D/g, '');
-    if (cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-    let soma = 0;
-    for (let i = 0; i < 9; i++) soma += parseInt(cpf.charAt(i)) * (10 - i);
-    let dig1 = 11 - (soma % 11);
-    dig1 = dig1 >= 10 ? 0 : dig1;
-    if (parseInt(cpf.charAt(9)) !== dig1) return false;
-
-    soma = 0;
-    for (let i = 0; i < 10; i++) soma += parseInt(cpf.charAt(i)) * (11 - i);
-    let dig2 = 11 - (soma % 11);
-    dig2 = dig2 >= 10 ? 0 : dig2;
-
-    return parseInt(cpf.charAt(10)) === dig2;
+  cpf = cpf.replace(/\D/g, '');
+  if (cpf.length !== 11 || /^([0-9])\1{10}$/.test(cpf)) return false;
+  let soma = 0;
+  for (let i = 0; i < 9; i++) {
+    soma += parseInt(cpf.charAt(i)) * (10 - i);
+  }
+  let resto = soma % 11;
+  let digito1 = resto < 2 ? 0 : 11 - resto;
+  if (parseInt(cpf.charAt(9)) !== digito1) return false;
+  soma = 0;
+  for (let i = 0; i < 10; i++) {
+    soma += parseInt(cpf.charAt(i)) * (11 - i);
+  }
+  resto = soma % 11;
+  let digito2 = resto < 2 ? 0 : 11 - resto;
+  return parseInt(cpf.charAt(10)) === digito2;
 }
+
+// Aplica máscara de CPF e valida em campo com id="cpf"
+document.addEventListener('DOMContentLoaded', () => {
+  const cpfInput = document.getElementById('cpf');
+  const erroCPF = document.getElementById('erroCPF');
+  if (!cpfInput) return;
+
+  cpfInput.addEventListener('input', () => {
+    // Aplica máscara: 000.000.000-00
+    let v = cpfInput.value.replace(/\D/g, '');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d)/, '$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    cpfInput.value = v;
+
+    // Validação
+    const raw = cpfInput.value.replace(/\D/g, '');
+    if (raw.length === 11) {
+      if (validarCPF(raw)) {
+        erroCPF.textContent = '';
+      } else {
+        erroCPF.textContent = 'CPF inválido';
+      }
+    } else {
+      erroCPF.textContent = '';
+    }
+  });
+});
+
 
 // Validação de e-mail
 function validarEmail(email) {
