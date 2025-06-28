@@ -21,7 +21,6 @@ urlpatterns = [
     path('folhas/', views.listar_folhas, name='listar_folhas'),
     path('folhas/<int:profissional_id>/', views.visualizar_folha, name='visualizar_folha'),
     path('folhas/<int:profissional_id>/salvar/', views.salvar_alteracoes_folha, name='salvar_alteracoes_folha'),
-    path('folhas/<int:profissional_id>/adicionar/', views.adicionar_registro, name='adicionar_registro'),
 
     # Chat
     path('chat/', views.chat_profissional, name='chat'),

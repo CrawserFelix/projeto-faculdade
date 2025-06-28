@@ -4,7 +4,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db import models
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
-from datetime import datetime
+from datetime import date, datetime
 
 
 
@@ -90,7 +90,7 @@ class Profissional(models.Model):
 
 class RegistroPonto(models.Model):
     profissional = models.ForeignKey(Profissional, on_delete=models.CASCADE)
-    data = models.DateField(auto_now_add=True)
+    data = models.DateField(default=date.today)
     hora = models.TimeField(default=hora_truncada)
     tipo = models.CharField(max_length=10, choices=[
         ('entrada', 'Entrada'),

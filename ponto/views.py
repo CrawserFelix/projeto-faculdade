@@ -1,7 +1,7 @@
 from django.http import HttpResponseBadRequest, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from datetime import datetime, calendar, date
-from calendar import calendar, month_name, monthrange
+from datetime import datetime, date
+from calendar import month_name, monthrange
 from django.views.decorators.http import require_GET
 from collections import defaultdict
 from django.contrib import messages
@@ -212,46 +212,11 @@ def obter_datas_do_mes(ano, mes):
     """
     Retorna lista de objetos date para cada dia do mês especificado.
     """
-    qtd_dias = calendar.monthrange(ano, mes)[1]  # usa o módulo calendar
+    qtd_dias = monthrange(ano, mes)[1]  # obtém quantidade de dias no mês
     return [date(ano, mes, dia) for dia in range(1, qtd_dias + 1)]
 
 # Exemplo de uso na view:
 datas = obter_datas_do_mes(2025, 6)
-
-@login_required
-@user_passes_test(lambda u: u.is_staff)  # só gestores podem
-def adicionar_registro(request, profissional_id):
-    if request.method != 'POST':
-        return HttpResponseBadRequest("Método inválido.")
-
-    prof = get_object_or_404(Profissional, id=profissional_id)
-    data_str = request.POST.get('data')     # ex: "2025-06-23"
-    hora_str = request.POST.get('hora')     # ex: "14:30"
-    tipo = request.POST.get('tipo')         # "entrada", "pausa", ...
-
-    if not data_str or not hora_str or not tipo:
-        return HttpResponseBadRequest("Dados incompletos.")
-
-    try:
-        data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
-        hora_obj = datetime.strptime(hora_str, "%H:%M").time()
-    except ValueError:
-        return HttpResponseBadRequest("Formato inválido.")
-
-    novo = RegistroPonto.objects.create(
-        profissional=prof,
-        data=data_obj,
-        hora=hora_obj,
-        tipo=tipo
-    )
-
-    return JsonResponse({
-        "mensagem": "Registro criado com sucesso.",
-        "id": novo.id,
-        "data": novo.data.strftime("%d/%m/%Y"),
-        "tipo": novo.tipo,
-        "hora": novo.hora.strftime("%H:%M")
-    })
 
 @login_required
 @user_passes_test(lambda u: u.is_staff)
@@ -281,6 +246,8 @@ def salvar_alteracoes_folha(request, profissional_id):
         data__year=ano
     )
     alterados = 0
+    created_count = 0
+    
     for ponto in registros:
         chk = f'editar_{ponto.id}'
         time_field = f'registro_{ponto.id}'
@@ -294,9 +261,31 @@ def salvar_alteracoes_folha(request, profissional_id):
                     alterados += 1
             except:
                 messages.error(request, f"Horário inválido em {ponto.data}")
-
-    if alterados:
+    # Processa novos registros adicionados via campos "novo_*"
+    for key, val in request.POST.items():
+        if key.startswith('novo_') and val:
+            # Formato da chave: "novo_<tipo>_<YYYY-MM-DD>"
+            try:
+                _, tipo, data_str = key.split('_', 2)
+            except ValueError:
+                continue
+            try:
+                data_obj = datetime.strptime(data_str, "%Y-%m-%d").date()
+                hora_obj = datetime.strptime(val, "%H:%M").time()
+            except ValueError:
+                messages.error(request, f"Formato inválido para novo registro em {data_str}.")
+                continue
+            # Evita duplicar registro se já existir mesmo tipo naquele dia
+            if RegistroPonto.objects.filter(profissional=prof, data=data_obj, tipo=tipo).exists():
+                continue
+            RegistroPonto.objects.create(profissional=prof, data=data_obj, hora=hora_obj, tipo=tipo)
+            created_count += 1
+    if alterados and created_count:
+        messages.success(request, f"{alterados} registro(s) atualizado(s) e {created_count} registro(s) criado(s) com sucesso.")
+    elif alterados:
         messages.success(request, f"{alterados} registro(s) atualizado(s) com sucesso.")
+    elif created_count:
+        messages.success(request, f"{created_count} registro(s) criado(s) com sucesso.")
     else:
         messages.info(request, "Nenhuma alteração detectada.")
 
@@ -317,7 +306,7 @@ def visualizar_folha(request, profissional_id):
     if not request.user.is_staff and prof.usuario != request.user:
         messages.error(request, 'Você só pode ver a sua própria folha.')
         return redirect('inicio')
-    # mes/ano
+    # Determina mês/ano a exibir
     mes = int(request.GET.get('mes', datetime.today().month))
     ano = int(request.GET.get('ano', datetime.today().year))
     registros = RegistroPonto.objects.filter(
@@ -325,20 +314,44 @@ def visualizar_folha(request, profissional_id):
         data__month=mes,
         data__year=ano
     ).order_by('data', 'hora')
-    # navegar
+    # Cálculo para navegação entre meses
     def adj(m,a,delta): return (12, a-1) if delta<0 and m==1 else (1, a+1) if delta>0 and m==12 else (m+delta,a)
     mes_ant, ano_ant = adj(mes,ano,-1)
     mes_prox, ano_prox = adj(mes,ano,1)
-    # template
-    tpl = 'ponto/folha.html' if request.user.is_staff else 'ponto/folha_profissional.html'
-    return render(request, tpl, {
+    # Prepara lista de dias do mês com seus registros (None se não houve ponto naquele dia)
+    from collections import defaultdict
+    regs_by_date = defaultdict(list)
+    for r in registros:
+        regs_by_date[r.data].append(r)
+    dias = []
+    num_dias = monthrange(ano, mes)[1]
+    for dia in range(1, num_dias+1):
+        data_atual = date(ano, mes, dia)
+        entrada = pausa = retorno = saida = None
+        for r in regs_by_date.get(data_atual, []):
+            if r.tipo == 'entrada':
+                entrada = r
+            elif r.tipo == 'pausa':
+                pausa = r
+            elif r.tipo == 'retorno':
+                retorno = r
+            elif r.tipo == 'saida':
+                saida = r
+        dias.append({
+            'data': data_atual,
+            'entrada': entrada,
+            'pausa': pausa,
+            'retorno': retorno,
+            'saida': saida
+        })
+    # Renderiza o template unificado da folha de ponto
+    return render(request, 'ponto/folha.html', {
         'profissional': prof,
-        'registros': registros,
+        'dias': dias,
         'mes': mes, 'ano': ano,
-        'mes_anterior': {'mes': mes_ant,'ano': ano_ant},
-        'mes_proximo': {'mes': mes_prox,'ano': ano_prox},
-        'pode_editar': request.user.is_staff,
-        'tipos_padrao': ['entrada','pausa','retorno','saida'],
+        'mes_anterior': {'mes': mes_ant, 'ano': ano_ant},
+        'mes_proximo': {'mes': mes_prox, 'ano': ano_prox},
+        'pode_editar': request.user.is_staff
     })
 
 
@@ -471,38 +484,77 @@ def dashboard_data(request):
         data__month=mes
     ).order_by('data', 'hora')
 
-    # agrupa por dia
-    realizado = []
+    # Monta dicionário de dias com horários registrados (strings HH:MM)
     dias = {}
     for reg in registros_raw:
-        dia = reg.data.day
-        if dia not in dias:
-            dias[dia] = {
-                "dia": dia,
-                "entrada": None,
-                "pausa": None,
-                "retorno": None,
-                "saida": None,
-            }
-        # preenche de acordo com o tipo
-        if reg.tipo == RegistroPonto.tipo:
-            dias[dia]["entrada"] = reg.hora.strftime("%H:%M")
-        elif reg.tipo == RegistroPonto.tipo:
-            dias[dia]["pausa"] = reg.hora.strftime("%H:%M")
-        elif reg.tipo == RegistroPonto.tipo:
-            dias[dia]["retorno"] = reg.hora.strftime("%H:%M")
-        elif reg.tipo == RegistroPonto.tipo:
-            dias[dia]["saida"] = reg.hora.strftime("%H:%M")
+        d = reg.data.day
+        if d not in dias:
+            dias[d] = {"dia": d, "entrada": None, "pausa": None, "retorno": None, "saida": None}
+        dias[d][reg.tipo] = reg.hora.strftime("%H:%M")
+    # Garante que todos os dias do mês estejam presentes no resultado
+    ultimo_dia = monthrange(ano, mes)[1]
+    for d in range(1, ultimo_dia+1):
+        if d not in dias:
+            dias[d] = {"dia": d, "entrada": None, "pausa": None, "retorno": None, "saida": None}
+    # Converte dicionário para lista ordenada por dia
+    realizado = [dias[d] for d in sorted(dias.keys())]
+    # Calcula métricas: atrasos, faltas e horas extras
+    atrasos = 0
+    faltas = 0
+    total_extras_min = 0
+    # Horários esperados (datetime.time) para comparação
+    entrada_esperada = datetime.strptime(esperado["entrada"], "%H:%M").time() if esperado["entrada"] else None
+    saida_esperada = datetime.strptime(esperado["saida"], "%H:%M").time() if esperado["saida"] else None
+    for entry in realizado:
+        # Verifica falta (dia útil sem nenhum registro)
+        if (entry["entrada"] is None and entry["pausa"] is None and entry["retorno"] is None and entry["saida"] is None):
+            # Determina o dia da semana (0=Segunda,...,6=Domingo)
+            try:
+                data_atual = date(ano, mes, entry["dia"])
+            except Exception:
+                data_atual = None
+            if data_atual and data_atual.weekday() < 5:  # só conta faltas em dias úteis (segunda a sexta)
+                faltas += 1
+        else:
+            # Atraso: Entrada registrada após horário esperado
+            if entry["entrada"] and entrada_esperada:
+                try:
+                    entrada_real = datetime.strptime(entry["entrada"], "%H:%M").time()
+                except ValueError:
+                    entrada_real = None
+                if entrada_real and entrada_real > entrada_esperada:
+                    atrasos += 1
+            # Horas extras: Saída registrada após horário de saída esperado
+            if entry["saida"] and saida_esperada:
+                try:
+                    saida_real = datetime.strptime(entry["saida"], "%H:%M").time()
+                except ValueError:
+                    saida_real = None
+                if saida_real and saida_real > saida_esperada:
+                    # Calcula diferença em minutos entre saída real e esperada
+                    extra_min = (saida_real.hour * 60 + saida_real.minute) - (saida_esperada.hour * 60 + saida_esperada.minute)
+                    if extra_min > 0:
+                        total_extras_min += extra_min
+    # Formata horas extras em horas e minutos (ex: "2h 30min")
+    if total_extras_min > 0:
+        horas = total_extras_min // 60
+        mins = total_extras_min % 60
+        if horas > 0 and mins > 0:
+            horas_extras_str = f"{horas}h {mins}min"
+        elif horas > 0:
+            horas_extras_str = f"{horas}h"
+        else:
+            horas_extras_str = f"{mins}min"
+    else:
+        horas_extras_str = "0"
 
-    # transforma o dicionário em lista ordenada
-    for dia in sorted(dias):
-        realizado.append(dias[dia])
-
-    # devolve o JSON no formato esperado pelo dashboard.js
     return JsonResponse({
         "profissional": profissional.usuario.nome_completo,
         "mes": mes,
         "ano": ano,
         "esperado": esperado,
         "realizado": realizado,
+        "atrasos": atrasos,
+        "faltas": faltas,
+        "horas_extras": horas_extras_str
     })

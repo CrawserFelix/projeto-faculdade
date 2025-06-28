@@ -283,7 +283,6 @@ input[type=number]::-webkit-outer-spin-button {
     opacity: 0.85;
 }
 
-/* ===== Novos estilos ===== */
 
 .confirmar-exclusao {
     background-color: #fff3f3;
@@ -385,3 +384,52 @@ input[type=number]::-webkit-outer-spin-button {
 .mensagem.minha { text-align: right; background: #d1e7dd; }
 .mensagem.deles { text-align: left; background: #f8d7da; }
 .mensagem p { display: inline-block; padding: 6px 10px; border-radius: 4px; }
+
+/* Estilos para mensagens de feedback */
+.messages {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 20px;
+}
+.messages li {
+  margin: 5px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+.messages .error {
+  background-color: #f8d7da; 
+  color: #721c24;           
+}
+.messages .success {
+  background-color: #d4edda; 
+  color: #155724;            
+}
+.messages .info {
+  background-color: #cce5ff; 
+  color: #004085;            
+}
+/* Estilo para texto de erro em formulários */
+.erro {
+  color: red;
+  font-weight: bold;
+}
+
+.campo-editado {
+    border: 2px solid #FFD966;
+}
+
+/* Garantir que o container posicionado seja relativo */
+td[position="relative"] .clear-time {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #555;
+  cursor: pointer;
+}
+td[position="relative"] .clear-time:hover {
+  color: #000;
+}

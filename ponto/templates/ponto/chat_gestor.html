@@ -5,7 +5,6 @@
   <aside class="chat-lista">
     <h3>Profissionais</h3>
     <ul>
-      <li><a href="{% url 'chat_gestor' %}">Listar equipe</a></li>
       {% for prof, count in unread_items %}
       <li>
         <a href="{% url 'chat_gestor_conversa' prof.id %}">

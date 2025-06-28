@@ -9,7 +9,7 @@
       <form id="dashboard-filtros">
         <label for="filtro-profissional">Profissional:</label>
         <select id="filtro-profissional" name="profissional">
-          <option value="">— Todos —</option>
+          <option selected>selecione</option>
           {% for prof in profissionais %}
             <option value="{{ prof.id }}"
               {% if prof.id|stringformat:"s" == request.GET.profissional %}selected{% endif %}>
@@ -20,7 +20,7 @@
 
         <label for="filtro-mes">Mês:</label>
         <select id="filtro-mes" name="mes">
-          <option value="">— Todos —</option>
+          <option value="">selecione</option>
           {% for m in meses %}
             <option value="{{ m.value }}"
               {% if m.value == mes_atual %}selected{% endif %}>
@@ -31,7 +31,7 @@
 
         <label for="filtro-ano">Ano:</label>
         <select id="filtro-ano" name="ano">
-          <option value="">— Todos —</option>
+          <option value="">selecione</option>
           {% for y in anos %}
             <option value="{{ y }}"
               {% if y == ano_atual %}selected{% endif %}>
@@ -42,6 +42,11 @@
 
         <button type="button" id="dashboard-atualizar">Atualizar</button>
       </form>
+      <div id="dashboard-metricas">
+        <p id="metrica-atrasos"></p>
+        <p id="metrica-extras"></p>
+        <p id="metrica-faltas"></p>
+      </div>
     </div>
 
     <!-- Tabela de dados (será populada via JS) -->
@@ -68,13 +73,6 @@
     </form>
   {% endif %}
 
-  {% if messages %}
-    <ul class="messages">
-      {% for message in messages %}
-        <li class="{{ message.tags }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
-  {% endif %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

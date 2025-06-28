@@ -10,13 +10,9 @@
   <a href="?mes={{ mes_proximo.mes }}&ano={{ mes_proximo.ano }}">Próximo mês →</a>
 </div>
 
-<form method="post"
-      action="{% url 'salvar_alteracoes_folha' profissional.id %}?mes={{ mes }}&ano={{ ano }}">
+<form method="post" action="{% url 'salvar_alteracoes_folha' profissional.id %}?mes={{ mes }}&ano={{ ano }}">
   {% csrf_token %}
-
-  <table id="folha-tabela"
-         class="tabela-folha-ponto"
-         data-prof-id="{{ profissional.id }}">
+  <table id="folha-tabela" class="tabela-folha-ponto">
     <thead>
       <tr>
         <th>Data</th>
@@ -24,63 +20,79 @@
         <th>Pausa</th>
         <th>Retorno</th>
         <th>Saída</th>
-        {% if pode_editar %}<th>Ações</th>{% endif %}
       </tr>
     </thead>
     <tbody>
-      {# Agrupa registros por data #}
-      {% regroup registros by data as dias %}
       {% for dia in dias %}
-      <tr data-date="{{ dia.grouper|date:'Y-m-d' }}">
-        <td>{{ dia.grouper|date:"d/m/Y" }}</td>
-
-        {# Para cada tipo padrão, exibe hora ou traço #}
-        {% for tipo in tipos_padrao %}
-        <td data-tipo="{{ tipo }}">
-          {% comment %}Assume que já preparou no view um dict tipo→hora ou None{% endcomment %}
-          {% if dia.dict_times|get_item:tipo %}
+      <tr data-date="{{ dia.data|date:'Y-m-d' }}">
+        <td>{{ dia.data|date:"d/m/Y" }}</td>
+        <!-- Entrada -->
+        <td>
+          {% if dia.entrada %}
             {% if pode_editar %}
-              <input type="time"
-                     name="registro_{{ dia.dict_times|get_item:tipo.id }}"
-                     value="{{ dia.dict_times|get_item:tipo.hora }}">
-              <input type="checkbox" name="editar_{{ dia.dict_times|get_item:tipo.id }}">
+              <input type="time" name="registro_{{ dia.entrada.id }}" value="{{ dia.entrada.hora|time:'H:i' }}" **data-original="{{ dia.entrada.hora|time:'H:i' }}"**>
+              <button type="button" class="clear-time" title="Limpar horário">&times;</button>
             {% else %}
-              {{ dia.dict_times|get_item:tipo.hora }}
+              {{ dia.entrada.hora|time:"H:i" }}
             {% endif %}
           {% else %}
-            –  
+            {% if pode_editar %}
+              <input type="time" name="novo_entrada_{{ dia.data|date:'Y-m-d' }}">
+            {% else %}
+              – 
+            {% endif %}
           {% endif %}
         </td>
-        {% endfor %}
-
-        {% if pode_editar %}
+        <!-- Pausa (Início do Intervalo) -->
         <td>
-          {# Botão para abrir o formulário inline #}
-          <button type="button"
-                  class="botao-adicionar-registro"
-                  data-date="{{ dia.grouper|date:'Y-m-d' }}">
-            Adicionar Registro
-          </button>
-
-          {# Mini-formulário, inicialmente oculto #}
-          <div class="form-adicionar" style="display:none;">
-            <select name="tipo_novo">
-              <option value="entrada">Entrada</option>
-              <option value="pausa">Pausa</option>
-              <option value="retorno">Retorno</option>
-              <option value="saida">Saída</option>
-            </select>
-            <input type="time" name="hora_nova">
-            <button type="button" class="btn-salvar-registro">Salvar</button>
-            <button type="button" class="btn-cancelar-registro">Cancelar</button>
-          </div>
+          {% if dia.pausa %}
+            {% if pode_editar %}
+              <input type="time" name="registro_{{ dia.pausa.id }}" value="{{ dia.pausa.hora|time:'H:i' }}" **data-original="{{ dia.pausa.hora|time:'H:i' }}"**>
+              <button type="button" class="clear-time" title="Limpar horário">&times;</button>
+            {% else %}
+              {{ dia.pausa.hora|time:"H:i" }}
+            {% endif %}
+          {% else %}
+            {% if pode_editar %}
+              <input type="time" name="novo_pausa_{{ dia.data|date:'Y-m-d' }}">
+            {% else %}
+              – 
+            {% endif %}
+          {% endif %}
         </td>
-        {% endif %}
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="{% if pode_editar %}6{% else %}5{% endif %}">
-          Sem registros encontrados.
+        <!-- Retorno (Fim do Intervalo) -->
+        <td>
+          {% if dia.retorno %}
+            {% if pode_editar %}
+              <input type="time" name="registro_{{ dia.retorno.id }}" value="{{ dia.retorno.hora|time:'H:i' }}" **data-original="{{ dia.retorno.hora|time:'H:i' }}"**>
+              <button type="button" class="clear-time" title="Limpar horário">&times;</button>
+            {% else %}
+              {{ dia.retorno.hora|time:"H:i" }}
+            {% endif %}
+          {% else %}
+            {% if pode_editar %}
+              <input type="time" name="novo_retorno_{{ dia.data|date:'Y-m-d' }}">
+            {% else %}
+              – 
+            {% endif %}
+          {% endif %}
+        </td>
+        <!-- Saída -->
+        <td>
+          {% if dia.saida %}
+            {% if pode_editar %}
+              <input type="time" name="registro_{{ dia.saida.id }}" value="{{ dia.saida.hora|time:'H:i' }}" **data-original="{{ dia.saida.hora|time:'H:i' }}"**>
+              <button type="button" class="clear-time" title="Limpar horário">&times;</button>
+            {% else %}
+              {{ dia.saida.hora|time:"H:i" }}
+            {% endif %}
+          {% else %}
+            {% if pode_editar %}
+              <input type="time" name="novo_saida_{{ dia.data|date:'Y-m-d' }}">
+            {% else %}
+              – 
+            {% endif %}
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
@@ -95,6 +107,4 @@
 </form>
 
 <a href="{% url 'listar_profissionais' %}">← Voltar</a>
-
-<script src="{% static 'js/folha.js' %}"></script>
 {% endblock %}
