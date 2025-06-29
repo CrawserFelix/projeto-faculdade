@@ -242,16 +242,6 @@ def registrar_ponto(request):
             messages.error(request, 'Profissional não encontrado.')
     return redirect('inicio')
 
-def obter_datas_do_mes(ano, mes):
-    """
-    Retorna lista de objetos date para cada dia do mês especificado.
-    """
-    qtd_dias = monthrange(ano, mes)[1]  # obtém quantidade de dias no mês
-    return [date(ano, mes, dia) for dia in range(1, qtd_dias + 1)]
-
-# Exemplo de uso na view:
-datas = obter_datas_do_mes(2025, 6)
-
 @login_required
 @user_passes_test(lambda u: u.is_staff)
 def salvar_alteracoes_folha(request, profissional_id):
@@ -269,24 +259,47 @@ def salvar_alteracoes_folha(request, profissional_id):
     created_count = 0
 
     # Atualiza registros existentes
-    for ponto in registros:
-        time_field = f'registro_{ponto.id}'
-        if time_field in request.POST:
-            hora_str = request.POST.get(time_field)
-            if hora_str == "":
-                # Usuário limpou o horário: exclui o registro
-                ponto.delete()
-                alterados += 1
-                continue
-            try:
-                nova_hora = datetime.strptime(hora_str, '%H:%M').time()
-            except ValueError:
-                messages.error(request, f"Horário inválido em {ponto.data}")
-                continue
-            if ponto.hora != nova_hora:
-                ponto.hora = nova_hora
-                ponto.save(update_fields=['hora'])
-                alterados += 1
+    for key, hora_str in request.POST.items():
+        if not key.startswith('registro_'):
+            continue
+        try:
+            _, id_str = key.split('_', 1)
+            ponto = RegistroPonto.objects.get(
+                id=int(id_str),
+                profissional=prof,
+                data__month=mes,
+                data__year=ano
+            )
+        except (ValueError, RegistroPonto.DoesNotExist):
+            continue
+        
+        # Se campo estiver vazio, exclui registro
+        if hora_str == "":
+            ponto.delete()
+            alterados += 1
+            continue
+        
+        # Tenta converter e só salva se mudou
+        try:
+            nova_hora = datetime.strptime(hora_str, '%H:%M').time()
+        except ValueError:
+            messages.error(request, f"Horário inválido em {ponto.data}")
+            continue
+        
+        if ponto.hora != nova_hora:
+            ponto.hora = nova_hora
+            ponto.save(update_fields=['hora'])
+            alterados += 1
+            continue
+        try:
+            nova_hora = datetime.strptime(hora_str, '%H:%M').time()
+        except ValueError:
+            messages.error(request, f"Horário inválido em {ponto.data}")
+            continue
+        if ponto.hora != nova_hora:
+            ponto.hora = nova_hora
+            ponto.save(update_fields=['hora'])
+            alterados += 1
     # Processa novos registros adicionados via campos "novo_*"
     for key, val in request.POST.items():
         if key.startswith('novo_') and val:

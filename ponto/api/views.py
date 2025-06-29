@@ -34,7 +34,7 @@ class ChatViewSet(viewsets.ModelViewSet):
                 {'detail': 'Parâmetros gestor e usuário são obrigatórios.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        # Caso contrário, mesmo sem mensagens, devolve array vazio:
+        # Caso sem mensagens, devolve array vazio:
         qs = self.get_queryset()
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)

@@ -615,3 +615,46 @@ input {
     background-color: #f9f9f9;
 }
 
+/* Dashboard – Métricas */
+#dashboard-metricas {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+#dashboard-metricas p {
+  flex: 1 1 30%;
+  background-color: #f7f9fc;
+  border: 1px solid #dde6f0;
+  border-radius: 8px;
+  padding: 16px 12px;
+  margin: 0;
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2f3e4e;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+
+#dashboard-metricas p:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Diferenciação por ID (cores de destaque) */
+#metrica-atrasos   { border-left: 4px solid #f39c12; }
+#metrica-extras    { border-left: 4px solid #27ae60; }
+#metrica-faltas    { border-left: 4px solid #c0392b; }
+
+/* Responsivo */
+@media (max-width: 600px) {
+  #dashboard-metricas {
+    flex-direction: column;
+  }
+  #dashboard-metricas p {
+    flex: 1 1 100%;
+  }
+}
