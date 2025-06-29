@@ -31,7 +31,7 @@
       <td>{{ profissional.usuario.email }}</td>
       <td>
         <a href="{% url 'editar_profissional' profissional.id %}" class="botao-acao editar">Editar</a>
-        <a href="{% url 'excluir_profissional' profissional.id %}" class="botao-acao">Excluir</a>
+        <a href="{% url 'excluir_profissional' profissional.id %}" class="botao-acao excluir">Excluir</a>
       </td>
     </tr>
     {% empty %}
@@ -41,8 +41,8 @@
 </table>
 
 <div class="form-actions">
-  <a href="{% url 'cadastrar_profissional' %}"><button type="button">Novo Profissional</button></a>
-  <a href="{% url 'inicio' %}"><button type="button">Voltar</button></a>
+  <a href="{% url 'cadastrar_profissional' %}" class="botao-acao">Novo Profissional</a>
+  <a href="{% url 'inicio' %}" class="botao-acao cancelar">Voltar</a>
 </div>
 
 <script src="{% static 'js/popups.js' %}"></script>

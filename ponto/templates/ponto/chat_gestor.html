@@ -6,7 +6,7 @@
     <h3>Profissionais</h3>
     <ul>
       {% for prof, count in unread_items %}
-      <li>
+      <li class="lista_profissionais">
         <a href="{% url 'chat_gestor_conversa' prof.id %}">
           {{ prof.usuario.nome_completo }}
           {% if count %}<span class="badge">{{ count }}</span>{% endif %}

@@ -15,7 +15,7 @@
     <tr>
       <td>{{ profissional.usuario.get_full_name }}</td>
       <td>
-        <a href="{% url 'visualizar_folha' profissional.id %}">Visualizar</a>
+        <a href="{% url 'visualizar_folha' profissional.id %}" class="botao-acao">Visualizar</a>
       </td>
     </tr>
     {% empty %}

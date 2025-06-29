@@ -66,10 +66,10 @@
   {% else %}
     <form method="post" action="{% url 'registrar_ponto' %}">
       {% csrf_token %}
-      <button name="tipo" value="entrada">Registrar Entrada</button>
-      <button name="tipo" value="pausa">Registrar Pausa</button>
-      <button name="tipo" value="retorno">Registrar Retorno</button>
-      <button name="tipo" value="saida">Registrar Saída</button>
+      <button id="entrada" name="tipo" value="entrada">Registrar Entrada</button>
+      <button id="pausa" name="tipo" value="pausa">Registrar Pausa</button>
+      <button id="retorno" name="tipo" value="retorno">Registrar Retorno</button>
+      <button id="saida" name="tipo" value="saida">Registrar Saída</button>
     </form>
   {% endif %}
 
